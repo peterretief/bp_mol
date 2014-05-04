@@ -85,27 +85,24 @@ class VesselListHandler(BaseHandler):
 
 
 class ContainerListHandler(BaseHandler):
-  def get(self, container):
-        to_container = 3
-	#how many contaers are there?? TODO
+  def get(self, container, sheet_name):
 	dictd = lambda: defaultdict(dictd)
 	y = dictd()
-	wb = ""
-	sh = ""
 	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(container).read())
+	sh = wb.sheet_by_name(sheet_name)        
+        to_container = (sh.nrows-C_START)/2
         con_range = range(C_START, C_START+(to_container*2),2)
-	for i in range(0,wb.nsheets-1):
-		sh = wb.sheet_by_index(i)   
-		y["voyage"] =  sh.cell_value(9,1)
-		y["key"] = blobstore.BlobInfo.get(container).key()
-                y["date_of_loading"] =  "(datetime(*(xlrd.xldate_as_tuple(sh.cell_value(11,1), 0))[0:6])).strftime('%d-%m-%Y')"
-                y["product"] =  "sh.cell_value(10,1)"
-                y["port"] = "sh.cell_value(11,0)"
-                y["vesselname"] = "sh.cell_value(8,1)"
-    		y["container"][i] =  sh.cell_value(con_range[i],0)
+
+	for i in range(0, sh.nrows):
+	    try:
+		y["container"][i] =  sh.cell_value(con_range[i],0)
 		y["container"]["ppecbcode"][i] = sh.cell_value(con_range[i],1)
     		y["container"]["vent"][i] =  sh.cell_value(con_range[i],2)
 		y["container"]["setpoint"][i] = sh.cell_value(con_range[i],3)
+
+	    except:
+        	print "Maximum recursion depth exceeded."
+
  
     	params = {
 	    "y": y,
@@ -116,24 +113,19 @@ class ContainerListHandler(BaseHandler):
 
 class FileListHandler(BaseHandler):
   def get(self):
-	get_data = models.UserUpload_ndb().query().fetch(10)
+	get_data = blobstore.BlobInfo.all()
 	dictd = lambda: defaultdict(dictd)
 	list_data = dictd()
-	for s in xrange(1,3):
-		list_data["filename"][s] = blobstore.BlobInfo.get(get_data[s].blob).filename
-		list_data["key"][s] = blobstore.BlobInfo.get(get_data[s].blob).key()
-		list_data["blob"][s] = blobstore.BlobInfo.get(get_data[s].blob)
+	for s in range(0,get_data.count()):
+		list_data["filename"][s] = get_data[s].filename
+		list_data["key"][s] = get_data[s].key()
+		list_data["count"][s] = get_data.count()
 	
     	params = {
 	    "list_data": list_data,
 
     	}
    	return self.render_template('filelist.html', **params)
-
-
-
-#   	return self.render_template('results.html', **params)
-   	return self.render_template('containerlist.html', **params)
 
 
 class ResultsHandler(BaseHandler):

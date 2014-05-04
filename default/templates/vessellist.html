@@ -7,9 +7,9 @@
 
 {% block content %}
 
-{{file_data["key"]}}
 
-<a href="/filelist"><< {{file_data["filename"]}}</a>
+<h5><a href="/filelist"><<</a> Filename:{{file_data["filename"]}} Ship: {{file_data["vesselname"][0]}} Voyage: {{file_data["voyage"][0]}}</h5>
+
 
 <table class="table table-bordered table-condensed">
     <thead>
@@ -29,11 +29,9 @@
 {% if not file_data["vesselname"][s] == "" %}
 <td>{{file_data["date_of_loading"][s]}}</td>
 <td>{{file_data["sheetname"][s]}}</td>
-<td>{{file_data["vesselname"][s]}}</td>
-<td>{{file_data["voyage"][s]}}</td>
 <td>{{file_data["product"][s]}}</td>
 <td>{{file_data["port"][s]}}</td>
-<td><a href=/containerlist/{{file_data["key"]}} >>>></a></td>
+<td><a href=/containerlist/{{file_data["key"]}}/{{file_data["sheetname"][s]}} >>>></a></td>
 {% endif %}
 </tr>
 {% endfor %}

@@ -18,7 +18,7 @@ _routes = [
     RedirectRoute('/file_handler/([^/]+)?', handlers.ViewFileHandler, name='filehandler', strict_slash=True),
     RedirectRoute('/upload', handlers.UploadHandler, name='upload', strict_slash=True),
     RedirectRoute('/filelist', handlers.FileListHandler, name='filelist', strict_slash=True),
-    RedirectRoute('/containerlist/<container>', handlers.ContainerListHandler, name='containerlist', strict_slash=True),
+    RedirectRoute('/containerlist/<container>/<sheet_name>', handlers.ContainerListHandler, name='containerlist', strict_slash=True),
     RedirectRoute('/sheetlist', handlers.FileListHandler, name='sheetlist', strict_slash=True),
     RedirectRoute('/templist/<temp>', handlers.FileListHandler, name='templist', strict_slash=True),
     RedirectRoute('/vessellist/<vessel>', handlers.VesselListHandler, name='vessellist', strict_slash=True),

@@ -7,22 +7,18 @@
 
 {% block content %}
 
+
 <table class="table table-bordered table-condensed">
     <thead>
-    <tr bgcolor="#808080">
-    <th>Load date</th>
-    <th>Sheet name</th>
-    <th>Vessel name</th>
-    <th>Voyage</th>
-    <th>Product</th>
-    <th>Port</th>
+    <tr>
+    <th>Container</th>
     </tr>
     </thead>
     <tbody>
 
 <tr>
 {% for s in range(0, y["container"]|length) %}
-<td>"{{y["container"][s]}}"</td>
+<td>{{y["container"][s]}}</td>
 <td><a href=/templist/{{s}}>>>></a></td>
 </tr>
 {% endfor %}

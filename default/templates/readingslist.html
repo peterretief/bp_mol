@@ -1,0 +1,56 @@
+{% extends base_layout %}
+
+{% block header_title %}
+
+
+{% endblock %}
+
+{% block content %}
+
+<ul>
+<li>	{{ y["filekey"] }}  </li> 
+<li> 	{{ y["sheet_name"] }}  </li>
+<li> 	{{ y["row"] }}  </li>
+<li> 	{{ y["DAtemp"] }} </li>
+</ul>
+
+<table class="table table-bordered table-condensed">
+    <thead>
+    <tr>
+  <th>DAT</th>  
+ {% for s in range(5, 20) %}
+    <th>{{ y["DAtemp"][s] }}</th>
+  {% endfor %}
+    </tr>
+    <tr>
+    <th>RAT</th> 
+  {% for s in range(5, 20) %}
+    <th>{{ y["RAtemp"][s] }}</th>
+  {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+
+
+<tr>
+<td></td>
+</tr>
+    </tbody>
+    </table>
+
+    <table>
+        <tr>
+        <td>
+            Mobile:
+            <span class="label {% if is_mobile %}label-success{% endif %}">{{ is_mobile }}</span>
+        </td>
+        </tr>
+    </table>
+
+
+        <hr/>
+
+    <p><a href="{{ logout_url }}" class="btn btn-primary">{% trans %}Logout{% endtrans %}</a></p>
+
+
+{% endblock %}

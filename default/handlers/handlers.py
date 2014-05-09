@@ -25,7 +25,6 @@ from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.ext.blobstore import BlobReader
 
-
 import urllib
 import codecs
 
@@ -55,54 +54,144 @@ class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
     self.send_blob(blob_info)
 
 
+def validate(date_text):
+    try:
+        datetime.datetime.strptime(date_text, '%Y-%m-%d')
+    except ValueError:
+        raise ValueError("Incorrect data format, should be YYYY-MM-DD")
+
 class VesselListHandler(BaseHandler):
-  def get(self, vessel):
+  def get(self, filekey):
+#create dictionary
 	dictd = lambda: defaultdict(dictd)
 	file_data = dictd()
-	wb = ""
-	sh = ""
-	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(vessel).read())
-	for s in range(0,wb.nsheets):   
-		sh = wb.sheet_by_index(s)
-		file_data["filename"] = blobstore.BlobInfo.get(vessel).filename
-		file_data["key"] = blobstore.BlobInfo.get(vessel).key()
-		file_data["vesselname"][s] = sh.cell_value(8,1)
-		file_data["sheetname"][s] =  sh.name
-      		file_data["voyage"][s] =  sh.cell_value(9,1)
-      		file_data["product"][s] =  sh.cell_value(10,1)
-     		file_data["port"][s] = sh.cell_value(11,0)
-		if not (sh.cell_value(11,1) == ""):
-			file_data["date_of_loading"][s] =  (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(11,1), 0))[0:6])).strftime('%d-%m-%Y')
-		if not (sh.cell_value(12,1) == ""):
-			file_data["date_of_loading2"][s] =  (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(12,1), 0))[0:6])).strftime('%d-%m-%Y')
+#open file based on key
+	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
+	sh = wb.sheet_by_index(0)
+#get position of fields  
+	for b in range(0, wb.nsheets):
+		cnt = 0
+		s = wb.sheet_by_index(b)
+		for a in range(5, 20):
+			if "VESSEL" in s.cell_value(a,0):
+                                if (len(s.cell_value(a,1)) > 0):
+					file_data["vesselname1"]["xaxis"] = a
+					file_data["vesselname1"][b] = s.cell_value(a,1)
+				
+			if "VOYAGE" in s.cell_value(a,0):
+                                if (len(s.cell_value(a,1)) > 0):
+					file_data["voyage1"]["xaxis"] = a
+					file_data["voyage1"][b] = s.cell_value(a,1)
+
+			if "PRODUCT" in s.cell_value(a,0):
+                                if (len(s.cell_value(a,1)) > 0):
+					file_data["product1"]["xaxis"] = a
+					file_data["product1"][b] = s.cell_value(a,1)
+
+			if "EX" in s.cell_value(a,0):
+				if (len(str(s.cell_value(a,0))) > 5):
+					cnt += 1					
+			#		file_data["date_of_loading1"][b]["a"] = a
+					for ant in range(0, cnt):		
+						file_data["date_of_loading1"][b][ant] = (datetime(*(xlrd.xldate_as_tuple(s.cell_value(a-ant, 1), 0))[0:6])).strftime('%d-%m-%Y')
+					
+					file_data["date_of_loading1"][b]["cnt"] = cnt
+					file_data["date_of_loading1"][b][cnt] = a-cnt
+
+
+#loop through sheets
+	for v in range(0,wb.nsheets):   
+		sh = wb.sheet_by_index(v)
+		file_data["no_sheets"] = wb.nsheets
+		file_data["filename"] = blobstore.BlobInfo.get(filekey).filename
+		file_data["key"] = blobstore.BlobInfo.get(filekey).key()
+		file_data["vesselname"][v] = sh.cell_value(8,1)
+		file_data["sheetname"][v] =  sh.name
+      		file_data["voyage"][v] =  sh.cell_value(9,1)
+      		file_data["product"][v] =  sh.cell_value(10,1)
+     		file_data["port"][v] = sh.cell_value(11,0)
+#		if not (sh.cell_value(11,1) == ""):
+#			file_data["date_of_loading"][v] =  (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(11,1), 0))[0:6])).strftime('%d-%m-%Y')
  
     	params = {
 	    "file_data": file_data,
-	    "vesselnumber": "vesselnumber",
 
     	}
    	return self.render_template('vessellist.html', **params)
 
 
-class ContainerListHandler(BaseHandler):
-  def get(self, container, sheet_name):
+class ReadingsListHandler(BaseHandler):
+  def get(self, filekey, sheet_name, row):
 	dictd = lambda: defaultdict(dictd)
 	y = dictd()
-	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(container).read())
+	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
+	sh = wb.sheet_by_name(sheet_name)      
+ 	y["filekey"] = filekey 
+ 	y["sheet_name"] = sheet_name 
+ 	y["row"] = row
+#whats happening with this -1?
+        row = int(row)-1 
+	cols = sh.ncols
+	y["filename"] = blobstore.BlobInfo.get(filekey).filename
+	y["product"] = sh.cell_value(10,1)
+#find col were readings start
+	for a in range(0, 10):
+		y["DAT"] = sh.cell_value(row, a)
+		try: 
+			if "DAT" in y["DAT"]:
+				start_col = a+1
+		except:
+			pass
+
+#find col were readings end
+	for a in range(start_col, 40):
+		try:
+			y["DAT"] = sh.cell_value(row, a) 
+			if "DAT" in y["DAT"]:
+				pass
+		except:
+			end_col = a
+
+	y["start_col"] = start_col
+	y["end_col"] = end_col
+	y["container"] =  sh.cell_value(row,0)
+	for j in range(start_col, end_col):
+		y["count"][j] = j - start_col + 1
+		try:
+			y["DAtemp"][j] = sh.cell_value(row, j)
+		except:
+			y["DAtemp"][j] = "NA"
+
+		try:
+	       		y["RAtemp"][j] = sh.cell_value(row+1, j)
+		except:
+	       		y["RAtemp"][j] = "NA"
+		try:                
+			y["date_"][j] = (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(29, j), 0))[0:6])).strftime('%d-%m-%Y')
+		except:       		
+		 	y["date_"][j] = "Date error"
+ 
+    	params = {
+	    "y": y,
+
+    	}
+   	return self.render_template('readingslist.html', **params)
+
+
+class ContainerListHandler(BaseHandler):
+  def get(self, filekey, sheet_name):
+	dictd = lambda: defaultdict(dictd)
+	y = dictd()
+	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
 	sh = wb.sheet_by_name(sheet_name)        
-        to_container = (sh.nrows-C_START)/2
-        con_range = range(C_START, C_START+(to_container*2),2)
-
-	for i in range(0, sh.nrows):
-	    try:
-		y["container"][i] =  sh.cell_value(con_range[i],0)
-		y["container"]["ppecbcode"][i] = sh.cell_value(con_range[i],1)
-    		y["container"]["vent"][i] =  sh.cell_value(con_range[i],2)
-		y["container"]["setpoint"][i] = sh.cell_value(con_range[i],3)
-
-	    except:
-        	print "Maximum recursion depth exceeded."
-
+  	for c in range(33, sh.nrows , 2):
+            y["container"][c] =  sh.cell_value(c,0)
+	    y["container"]["ppecbcode"][c] = sh.cell_value(c,1)
+    	    y["container"]["vent"][c] =  sh.cell_value(c,2)
+	    y["container"]["setpoint"][c] = sh.cell_value(c,3)
+            y["rows"] =  sh.nrows
+            y["filekey"] =  filekey
+            y["sheet_name"] =  sheet_name
  
     	params = {
 	    "y": y,
@@ -116,10 +205,11 @@ class FileListHandler(BaseHandler):
 	get_data = blobstore.BlobInfo.all()
 	dictd = lambda: defaultdict(dictd)
 	list_data = dictd()
-	for s in range(0,get_data.count()):
-		list_data["filename"][s] = get_data[s].filename
-		list_data["key"][s] = get_data[s].key()
-		list_data["count"][s] = get_data.count()
+	f = 0
+	for f in range(0, get_data.count()):
+	    list_data["filename"][f] = get_data[f].filename
+	    list_data["key"][f] = get_data[f].key()
+	    list_data["count"] = get_data.count()
 	
     	params = {
 	    "list_data": list_data,

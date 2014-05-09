@@ -12,14 +12,20 @@
     <thead>
     <tr>
     <th>Container</th>
+    <th>ppecbcode</th>
+    <th>Vent</th>
+    <th>SetPoint</th>
     </tr>
     </thead>
     <tbody>
 
 <tr>
-{% for s in range(0, y["container"]|length) %}
+{% for s in range(33, y["rows"], 2) %}
 <td>{{y["container"][s]}}</td>
-<td><a href=/templist/{{s}}>>>></a></td>
+<td>{{y["container"]["ppecbcode"][s]}}</td>
+<td>{{y["container"]["vent"][s]}}</td>
+<td>{{y["container"]["setpoint"][s]}}</td>
+<td><a href=/readingslist/{{y["filekey"]}}/{{y["sheet_name"]}}/{{s}}>NEXT</a></td>
 </tr>
 {% endfor %}
   

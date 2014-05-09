@@ -7,7 +7,7 @@
 
 {% block content %}
 
-{{list_data}}
+{{list_data["count"]}}
 
 Filenames:
 
@@ -25,7 +25,7 @@ Filenames:
     <tbody>
 
 <tr>
-{% for s in range(0, 3) %}
+{% for s in range(0, list_data["count"]) %}
 <td>{{list_data["filename"][s]}}</td>
 <td><a href=/vessellist/{{list_data["key"][s]}}>>>></a></td>
 </tr>

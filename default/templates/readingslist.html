@@ -7,27 +7,52 @@
 
 {% block content %}
 
-<ul>
-<li>	{{ y["filekey"] }}  </li> 
-<li> 	{{ y["sheet_name"] }}  </li>
-<li> 	{{ y["row"] }}  </li>
-<li> 	{{ y["DAtemp"] }} </li>
-</ul>
+<table class="table table-bordered table-condensed">
+    <thead>
+    </thead>
+    <tbody>
+
+<tr>
+<td>Filename{{ y["filename"] }}</td>
+<td>Vessel</td>
+<td>Sheet:::{{ y["sheet_name"] }}</td>
+
+<td>Container{{ y["container"] }}</td>
+</tr>
+    </tbody>
+    </table>
+
 
 <table class="table table-bordered table-condensed">
     <thead>
+
+    <tr>
+    <th>DAY</th> 
+  {% for s in range(y["start_col"], y["end_col"] ) %}
+    <td>{{ y["count"][s] }}</td>
+  {% endfor %}
+    </tr>
+
+    <tr>
+    <th>DATE</th> 
+  {% for s in range(y["start_col"], y["end_col"] ) %}
+    <td>{{ y["date_"][s] }}</td>
+  {% endfor %}
+    </tr>
+
     <tr>
   <th>DAT</th>  
- {% for s in range(5, 20) %}
+ {% for s in range(y["start_col"], y["end_col"] ) %}
     <th>{{ y["DAtemp"][s] }}</th>
   {% endfor %}
     </tr>
     <tr>
     <th>RAT</th> 
-  {% for s in range(5, 20) %}
+  {% for s in range(y["start_col"], y["end_col"] ) %}
     <th>{{ y["RAtemp"][s] }}</th>
   {% endfor %}
     </tr>
+
     </thead>
     <tbody>
 

@@ -6,46 +6,30 @@
 
 {% block content %}
 
-<h5><a href="/filelist"><<</a> Filename:{{file_data["filename"]}} Ship: {{file_data["vname"]}} Voyage: {{file_data["voyage1"]}}</h5>
-
-{{file_data["date_of_loading1"]}}
 
 <table class="table table-bordered table-condensed">
     <thead>
     <tr bgcolor="#808080">
-    <th>Load date</th>
-    <th>Sheet name</th>
-    <th>Vessel name</th>
-    <th>Voyage</th>
-    <th>Product</th>
     <th>Port</th>
+    <th>Vessel</th>
+    <th>Voyage</th>
+    <th>Date of load</th>
     </tr>
     </thead>
     <tbody>
 <tr>
-
-{% for s in range(0, file_data["no_sheets"]) %}
-{% for g in range(0, file_data["date_of_loading1"][s]["cnt"]  ) %}
-
-{% if not file_data["vesselname"][s] == "" %}
-
-<td>{{file_data["date_of_loading1"][s][g]}}</td>
-
-<td>{{file_data["sheetname"][s]}}</td>
-<td>{{file_data["vesselname1"][s]}}</td>
-<td>{{file_data["voyage1"][s]}}</td>
-<td>{{file_data["product1"][s]}}</td>
-<td>{{file_data["port"][s]}}</td>
-<td><a href=/containerlist/{{file_data["key"]}}/{{file_data["sheetname"][s]}} >>>></a></td>
-
+{% for s in range(0, y.get("nsheets"))%}
+<td>{{y.get("sheetname").get(s)}}</td>
+<td>{{y.get("vesselname").get(s)}}</td>
+<td>{{y.get("voyage").get(s)}}</td>
+{% if not (y.get("date_of_loading").get(s) == 'None') %}
+<td>{{y.get("date_of_loading").get(s)}}</td>
+<td class="{{y.get("colour")}}"><a href=/containerlist/{{y.get("key")}}/{{y.get("index").get(s)}} ><i class="icon-large icon-search"></i></a></td>
 {% endif %}
+
 </tr>
 {% endfor %}
-
-{% endfor %}
-  
-    </tbody>
-    </table>
+</table>
 
     <table>
         <tr>

@@ -35,6 +35,8 @@ from collections import defaultdict
 
 import models
 
+from decimal import *
+
 #constants
 #start of data
 C_START = 32
@@ -46,91 +48,105 @@ class ViewFileHandler(blobstore_handlers.BlobstoreDownloadHandler):
     resource = str(urllib.unquote(resource))
     blob_info = blobstore.BlobInfo.get(resource)
 
-
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
   def get(self, resource):
     resource = str(urllib.unquote(resource))
     blob_info = blobstore.BlobInfo.get(resource)
     self.send_blob(blob_info)
 
-
 def validate(date_text):
     try:
-        datetime.datetime.strptime(date_text, '%Y-%m-%d')
-    except ValueError:
-        raise ValueError("Incorrect data format, should be YYYY-MM-DD")
+	datetime.strptime(date_text,'%d-%m-%Y')
+	return 1
+    except:
+        return 0
+
 
 class VesselListHandler(BaseHandler):
   def get(self, filekey):
 #create dictionary
 	dictd = lambda: defaultdict(dictd)
-	file_data = dictd()
+	y = dictd()
 #open file based on key
 	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
-	sh = wb.sheet_by_index(0)
-#get position of fields  
-	for b in range(0, wb.nsheets):
-		cnt = 0
-		s = wb.sheet_by_index(b)
-		for a in range(5, 20):
-			if "VESSEL" in s.cell_value(a,0):
-                                if (len(s.cell_value(a,1)) > 0):
-					file_data["vesselname1"]["xaxis"] = a
-					file_data["vesselname1"][b] = s.cell_value(a,1)
-				
-			if "VOYAGE" in s.cell_value(a,0):
-                                if (len(s.cell_value(a,1)) > 0):
-					file_data["voyage1"]["xaxis"] = a
-					file_data["voyage1"][b] = s.cell_value(a,1)
-
-			if "PRODUCT" in s.cell_value(a,0):
-                                if (len(s.cell_value(a,1)) > 0):
-					file_data["product1"]["xaxis"] = a
-					file_data["product1"][b] = s.cell_value(a,1)
-
-			if "EX" in s.cell_value(a,0):
-				if (len(str(s.cell_value(a,0))) > 5):
-					cnt += 1					
-			#		file_data["date_of_loading1"][b]["a"] = a
-					for ant in range(0, cnt):		
-						file_data["date_of_loading1"][b][ant] = (datetime(*(xlrd.xldate_as_tuple(s.cell_value(a-ant, 1), 0))[0:6])).strftime('%d-%m-%Y')
-					
-					file_data["date_of_loading1"][b]["cnt"] = cnt
-					file_data["date_of_loading1"][b][cnt] = a-cnt
-
-
-#loop through sheets
-	for v in range(0,wb.nsheets):   
+	for v in range(0, wb.nsheets):
 		sh = wb.sheet_by_index(v)
-		file_data["no_sheets"] = wb.nsheets
-		file_data["filename"] = blobstore.BlobInfo.get(filekey).filename
-		file_data["key"] = blobstore.BlobInfo.get(filekey).key()
-		file_data["vesselname"][v] = sh.cell_value(8,1)
-		file_data["sheetname"][v] =  sh.name
-      		file_data["voyage"][v] =  sh.cell_value(9,1)
-      		file_data["product"][v] =  sh.cell_value(10,1)
-     		file_data["port"][v] = sh.cell_value(11,0)
-#		if not (sh.cell_value(11,1) == ""):
-#			file_data["date_of_loading"][v] =  (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(11,1), 0))[0:6])).strftime('%d-%m-%Y')
- 
+		y["key"] = blobstore.BlobInfo.get(filekey).key()
+		y["sheetname"][v] = sh.name
+		y["index"][v] = v
+		y["nsheets"] = wb.nsheets
+		for a in range(5, 15):
+			if "VESSEL" in sh.cell_value(a,0):
+                                if (len(sh.cell_value(a,1)) > 0):
+					y["vesselname"][v] = sh.cell_value(a,1)
+				else:
+					y["vesselname"][v] = "NA"
+					
+			if "VOYAGE" in sh.cell_value(a,0):
+                                if (len(sh.cell_value(a,1)) > 0):
+					y["voyage"][v] = sh.cell_value(a,1)
+				else:
+					y["voyage"][v] = "NA"
+
+
+			if "DATE of LOADING" in sh.cell_value(a,0):
+				try:
+					if (validate((datetime(*(xlrd.xldate_as_tuple(sh.cell_value(a, 1), 0))[0:6])).strftime('%d-%m-%Y'))):
+						y["date_of_loading"][v] = (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(a, 1), 0))[0:6])).strftime('%d-%m-%Y')
+				except:
+					y["date_of_loading"][v] = "None"
+
+	y["colour"] = "lightred"
+
     	params = {
-	    "file_data": file_data,
+	    "y": y,
 
     	}
+
    	return self.render_template('vessellist.html', **params)
+
+
+def readingList(filekey):
+	dictd = lambda: defaultdict(dictd)
+	y = dictd()
+	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
+	sh = wb.sheet_by_index(int(sheet_name))      
+#find col were readings start
+	for a in range(0, 10):
+		y["DAT"] = sh.cell_value(row, a)
+		try: 
+			if "Dat/Sup" in y["DAT"]:
+				start_col = a+1
+		except:
+			pass
+
+        row = int(row) 
+	cols = sh.ncols
+	y["filename"] = blobstore.BlobInfo.get(filekey).filename
+	y["product"] = sh.cell_value(10,1)
+
+	end_col = 22
+
+    	params = {
+	    "y": y,
+
+    	}
+   	return params
+
 
 
 class ReadingsListHandler(BaseHandler):
   def get(self, filekey, sheet_name, row):
 	dictd = lambda: defaultdict(dictd)
 	y = dictd()
+	start_col =1
 	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
-	sh = wb.sheet_by_name(sheet_name)      
+	sh = wb.sheet_by_index(int(sheet_name))      
  	y["filekey"] = filekey 
  	y["sheet_name"] = sheet_name 
  	y["row"] = row
 #whats happening with this -1?
-        row = int(row)-1 
+        row = int(row) 
 	cols = sh.ncols
 	y["filename"] = blobstore.BlobInfo.get(filekey).filename
 	y["product"] = sh.cell_value(10,1)
@@ -138,7 +154,7 @@ class ReadingsListHandler(BaseHandler):
 	for a in range(0, 10):
 		y["DAT"] = sh.cell_value(row, a)
 		try: 
-			if "DAT" in y["DAT"]:
+			if "Dat/Sup" in y["DAT"]:
 				start_col = a+1
 		except:
 			pass
@@ -147,10 +163,17 @@ class ReadingsListHandler(BaseHandler):
 	for a in range(start_col, 40):
 		try:
 			y["DAT"] = sh.cell_value(row, a) 
-			if "DAT" in y["DAT"]:
-				pass
+#			if "Dat/Sup" in y["DAT"]:
+#				pass
 		except:
-			end_col = a
+			end_col = 21
+
+#find start date
+	for c in range(start_col, 20):
+		if "Dat/Sup" in y["DAT"]:
+			start_col = a+1
+
+	end_col = 22
 
 	y["start_col"] = start_col
 	y["end_col"] = end_col
@@ -159,17 +182,70 @@ class ReadingsListHandler(BaseHandler):
 		y["count"][j] = j - start_col + 1
 		try:
 			y["DAtemp"][j] = sh.cell_value(row, j)
+			foo = sh.cell_value(row, j)
+			y["DAtempAM"][j], y["DAtempPM"][j] = foo.split("/") 
+
 		except:
 			y["DAtemp"][j] = "NA"
 
 		try:
 	       		y["RAtemp"][j] = sh.cell_value(row+1, j)
+			foo = sh.cell_value(row+1, j)
+			y["RAtempAM"][j], y["RAtempPM"][j] = foo.split("/") 
 		except:
 	       		y["RAtemp"][j] = "NA"
 		try:                
-			y["date_"][j] = (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(29, j), 0))[0:6])).strftime('%d-%m-%Y')
+			y["date_"][j] = (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(28, j), 0))[0:6])).strftime('%d-%m-%Y')
+			y["day_"][j] = (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(28, j), 0))[0:6])).strftime('%d')
+			y["month_"][j] = (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(28, j), 0))[0:6])).strftime('%m')
+			y["year_"][j] = (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(28, j), 0))[0:6])).strftime('%Y')
 		except:       		
 		 	y["date_"][j] = "Date error"
+
+#diffences
+		try:
+			foo = sh.cell_value(row, j)
+			amDAtemp, pmDAtemp = foo.split("/") 
+			foo2 = sh.cell_value(row+1, j)
+			amRAtemp, pmRAtemp = foo2.split("/") 
+                      #  amt = amDAtemp - amRAtemp
+			AMdiff = Decimal(amDAtemp) - Decimal(amRAtemp)
+			PMdiff = Decimal(pmDAtemp) - Decimal(pmRAtemp)
+	       		y["AMDiff"][j] = AMdiff     
+	       		y["PMDiff"][j] = PMdiff
+       			y["AMDiff"]["class"][j] = "default"
+       			y["PMDiff"]["class"][j] = "default"
+		        if (Decimal(AMdiff) <= Decimal(-1.0)): 
+		       			y["AMDiff"]["class"][j] = "lightred"
+	
+		        if (Decimal(AMdiff) >= Decimal(-0.5)): 
+		       			y["AMDiff"]["class"][j] = "lightgreen"
+
+		        if (Decimal(AMdiff) >= Decimal(-0.2)): 
+		       			y["AMDiff"]["class"][j] = "darkgreen"
+
+		        if (Decimal(AMdiff) <= Decimal(-2.0)): 
+		       			y["AMDiff"]["class"][j] = "darkred"
+
+
+#			PMdiff
+
+		        if (Decimal(PMdiff) <= Decimal(-1.0)): 
+		       			y["PMDiff"]["class"][j] = "lightred"
+	
+		        if (Decimal(PMdiff) >= Decimal(-0.5)): 
+		       			y["PMDiff"]["class"][j] = "lightgreen"
+
+		        if (Decimal(PMdiff) >= Decimal(-0.2)): 
+		       			y["PMDiff"]["class"][j] = "darkgreen"
+
+		        if (Decimal(PMdiff) <= Decimal(-2.0)): 
+		       			y["PMDiff"]["class"][j] = "darkred"
+
+		except:
+	       		y["AMDiff"][j] = "NA"
+
+
  
     	params = {
 	    "y": y,
@@ -183,8 +259,22 @@ class ContainerListHandler(BaseHandler):
 	dictd = lambda: defaultdict(dictd)
 	y = dictd()
 	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
-	sh = wb.sheet_by_name(sheet_name)        
-  	for c in range(33, sh.nrows , 2):
+	sh = wb.sheet_by_index(int(sheet_name))
+	row = 33
+#find col were readings start
+	for a in range(0, 10):
+		y["DAT"] = sh.cell_value(row, a)
+		try: 
+			if "Dat/Sup" in y["DAT"]:
+				start_col = a+1
+		except:
+			pass
+	y["start_col"] = start_col
+
+	for a in range(25, 32):
+		if "Number" in sh.cell_value(a,0):
+			y["start"] = a + 3
+  	for c in range(y["start"], sh.nrows , 2):
             y["container"][c] =  sh.cell_value(c,0)
 	    y["container"]["ppecbcode"][c] = sh.cell_value(c,1)
     	    y["container"]["vent"][c] =  sh.cell_value(c,2)
@@ -192,6 +282,33 @@ class ContainerListHandler(BaseHandler):
             y["rows"] =  sh.nrows
             y["filekey"] =  filekey
             y["sheet_name"] =  sheet_name
+       	    for g in range(5, 10):
+		try:			     	
+	            foo = sh.cell_value(c, g)
+		    amDAtemp, pmDAtemp = foo.split("/") 
+		    foo2 = sh.cell_value(c+1, g)
+		    amRAtemp, pmRAtemp = foo2.split("/") 
+   		    AMdiff = Decimal(amDAtemp) - Decimal(amRAtemp)
+		    PMdiff = Decimal(pmDAtemp) - Decimal(pmRAtemp)
+	       	    y["AMDiff"][g] = AMdiff     
+	       	    y["PMDiff"][g] = PMdiff
+       		    y["AMDiff"]["class"][g] = "default"
+       		    y["PMDiff"]["class"][g] = "default"
+ 	            if (Decimal(AMdiff) >= Decimal(-0.2)): 
+		    	y["AMDiff"]["class"][c][g] = "darkgreen"
+#			y["colour"][c] = "darkgreen"
+	            if (Decimal(AMdiff) >= Decimal(-0.5)): 
+		    	y["AMDiff"]["class"][c][g] = "lightgreen"
+#			y["colour"][c] = "lightgreen"
+		    if (Decimal(AMdiff) <= Decimal(-1.0)): 
+		    	y["AMDiff"]["class"][c][g] = "lightred"
+			y["colour"][c] = "lightred"
+  	            if (Decimal(AMdiff) <= Decimal(-2.0)): 
+		    	y["AMDiff"]["class"][c][g] = "darkred"
+			y["colour"][c] = "darkred"
+		except:
+			pass
+	
  
     	params = {
 	    "y": y,
@@ -205,7 +322,7 @@ class FileListHandler(BaseHandler):
 	get_data = blobstore.BlobInfo.all()
 	dictd = lambda: defaultdict(dictd)
 	list_data = dictd()
-	f = 0
+#	f = 0
 	for f in range(0, get_data.count()):
 	    list_data["filename"][f] = get_data[f].filename
 	    list_data["key"][f] = get_data[f].key()

@@ -14,12 +14,12 @@ Filenames:
 <table class="table table-bordered table-condensed">
     <thead>
     <tr bgcolor="#808080">
-    <th>Load date</th>
-    <th>Sheet name</th>
-    <th>Vessel name</th>
-    <th>Voyage</th>
-    <th>Product</th>
-    <th>Port</th>
+    <th>File name</th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
     </tr>
     </thead>
     <tbody>
@@ -27,7 +27,7 @@ Filenames:
 <tr>
 {% for s in range(0, list_data["count"]) %}
 <td>{{list_data["filename"][s]}}</td>
-<td><a href=/vessellist/{{list_data["key"][s]}}>>>></a></td>
+<td><a href=/vessellist/{{list_data["key"][s]}}><i class="icon-large icon-search icon-red"></i></a></td>
 </tr>
 {% endfor %}
   

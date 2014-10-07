@@ -1,0 +1,15 @@
+{% extends base_layout %}
+
+{% block header_title %}
+    {% trans %}Reefer status list{% endtrans %}
+{% endblock %}
+
+{% block content %}
+
+<form action={{ upload_url }} method="POST" enctype="multipart/form-data"> 
+<input type="file" name="file"><br> <input type="submit"  name="submit" value="Submit"> 
+</form>
+
+
+
+{% endblock %}

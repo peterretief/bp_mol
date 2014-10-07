@@ -1,0 +1,69 @@
+{% extends base_layout %}
+
+{% block header_title %}
+
+
+{% endblock %}
+
+{% block content %}
+
+
+<tr >
+{% for k in range(from_container, y["container"]["setpoint"]|length) %}
+    <td></td>
+    <td><b>{{ y['container'][k]}}</b></td>
+    <td><b>{{ y['container']['ppecbcode'][k]}}</b></td>
+    <td><b>{{ y['container']['vent'][k]}}</b></td>
+    <td><b>{{ y['container']['setpoint'][k]}}</b></td>
+
+
+<tr  bgcolor="#B3B3B3" style=padding-left:20px;">
+<th>&nbsp;&nbsp;Day & Date</th>
+<td>{{ y['container']['day'][k][0]}}{{ y['container']['date_'][k][0] }}</td>
+<td>{{ y['container']['day'][k][1]}}{{ y['container']['date_'][k][1]}}</td>
+<td>{{ y['container']['day'][k][2]}}{{ y['container']['date_'][k][2]}}</td>
+<td>{{ y['container']['day'][k][3]}}{{ y['container']['date_'][k][3]}}</td>
+</tr>
+
+
+<tr  bgcolor="#B3B3B3">
+<th>&nbsp;&nbsp;RAT</th>
+<td>{{ y['container']['RAtemp'][k][0]}}</td>
+<td>{{ y['container']['RAtemp'][k][1]}}</td>
+<td>{{ y['container']['RAtemp'][k][2]}}</td>
+<td>{{ y['container']['RAtemp'][k][3]}}</td>
+</tr>
+
+<tr  bgcolor="#B3B3B3">
+<th>&nbsp;&nbsp;DAT</th>
+<td>{{ y['container']['DAtemp'][k][0]}}</td>
+<td>{{ y['container']['DAtemp'][k][1]}}</td>
+<td>{{ y['container']['DAtemp'][k][2]}}</td>
+<td>{{ y['container']['DAtemp'][k][3]}}</td>
+</tr>
+
+
+</tr>
+
+{% endfor %}
+
+  
+    </tbody>
+    </table>
+
+    <table>
+        <tr>
+        <td>
+            Mobile:
+            <span class="label {% if is_mobile %}label-success{% endif %}">{{ is_mobile }}</span>
+        </td>
+        </tr>
+    </table>
+
+
+        <hr/>
+
+    <p><a href="{{ logout_url }}" class="btn btn-primary">{% trans %}Logout{% endtrans %}</a></p>
+
+
+{% endblock %}

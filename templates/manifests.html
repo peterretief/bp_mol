@@ -1,0 +1,40 @@
+{% extends base_layout %}
+
+{% block header_title %}
+
+{% endblock %}
+
+{% block content %}
+
+
+<table class="table table-bordered table-condensed">
+    <thead>
+    <tr bgcolor="#808080">
+    <th>ID</th>
+    <th>Vessel</th>
+    <th>Voyage</th>
+    <th>Port</th>
+    <th>Ship report</th>
+    <th></th>
+    <th></th>
+    </tr>
+    </thead>
+    <tbody>
+
+<tr>
+
+{% for s in range(0, 2) %}
+<td>{{y[s]['key'].id()}}</td>
+<td>{{y[s]['vessel']}}</td>
+<td>{{y[s]['voyage']}}</td>
+<td>{{y[s]['port']}}</td>
+<td></td>
+<td><a href=/manifest_detail/{{y[s].key}}><i class="icon-large icon-search icon-red"></i></a></td>
+</tr>
+{% endfor %}
+  
+    </tbody>
+    </table>
+
+
+{% endblock %}

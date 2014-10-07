@@ -1,0 +1,32 @@
+{% extends base_layout %}
+
+{% block header_title %}
+     <a href="/manifest/">Show Manifest list</a>
+
+{% endblock %}
+
+{% block content %}
+
+
+<form action="{{ upload_url }}" enctype="multipart/form-data" method="post">  
+<input type="file" name="file"><br> <input type="submit"  name="submit" value="Submit"> 
+</form>
+
+
+<a href="/update_links/">Update links</a>
+
+    <table>
+        <tr>
+        <td>
+            Mobile:
+            <span class="label {% if is_mobile %}label-success{% endif %}">{{ is_mobile }}</span>
+        </td>
+        </tr>
+    </table>
+
+        <hr/>
+
+    <p><a href="{{ logout_url }}" class="btn btn-primary">{% trans %}Logout{% endtrans %}</a></p>
+
+
+{% endblock %}

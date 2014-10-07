@@ -1,0 +1,121 @@
+{% extends base_layout %}
+
+{% block header_title %}
+
+{% endblock %}
+
+{% block content %}
+
+<table class="table table-bordered table-condensed">
+    <thead>
+    </thead>
+    <tbody>
+
+<tr>
+<td>Filename{{ y.get("filename") }}</td>
+<td>Vessel</td>
+<td>Sheet:::{{ y.get("sheet_name") }}</td>
+
+<td>Container{{ y.get("container") }}</td>
+</tr>
+    </tbody>
+    </table>
+
+
+<table class="table table-bordered table-condensed">
+    <thead>
+
+    <tr>
+    <th></th> 
+  {% for s in range(y.get("start_col"), y.get("end_col") ) %}
+    <td>{{ y.get("count").get(s) }}</td>
+  {% endfor %}
+    </tr>
+
+    <tr>
+    <th>Day</th> 
+  {% for s in range(y.get("start_col"), y.get("end_col") ) %}
+    <td>{{ y.get("day_").get(s) }}</td>
+  {% endfor %}
+    </tr>
+    <tr>
+    <th>Month</th> 
+  {% for s in range(y.get("start_col"), y.get("end_col") ) %}
+    <td>{{ y.get("month_").get(s) }}</td>
+  {% endfor %}
+    </tr>
+
+    <tr>
+    <th>Year</th> 
+  {% for s in range(y.get("start_col"), y.get("end_col") ) %}
+    <td>{{ y.get("year_").get(s) }}</td>
+  {% endfor %}
+    </tr>
+
+    <tr>
+  <th>Dat/Sup AM</th>  
+ {% for s in range(y.get("start_col"), y.get("end_col") ) %}
+    <th>{{ y.get("DAtempAM").get(s) }}</th>
+  {% endfor %}
+    </tr>
+
+    <tr>
+    <th>Rat/Ret AM</th> 
+  {% for s in range(y.get("start_col"), y.get("end_col") ) %}
+    <th>{{ y.get("RAtempAM").get(s) }}</th>
+  {% endfor %}
+    </tr>
+
+    <tr>
+    <th>AM Difference</th> 
+  {% for s in range(y.get("start_col"), y.get("end_col") ) %}
+   <th class="{{ y.get("AMDiff").get("class").get(s) }}" >{{ y.get("AMDiff").get(s) }}</th>
+  {% endfor %}
+    </tr>
+<hl/>
+    <tr>
+  <th>Dat/Sup PM</th>  
+ {% for s in range(y.get("start_col"), y.get("end_col") ) %}
+    <th>{{ y.get("DAtempPM").get(s) }}</th>
+  {% endfor %}
+    </tr>
+    <tr>
+    <th>Rat/Ret PM</th> 
+  {% for s in range(y.get("start_col"), y.get("end_col") ) %}
+    <th>{{ y.get("RAtempPM").get(s) }}</th>
+  {% endfor %}
+    </tr>
+
+    <tr>
+    <th>PM Difference</th> 
+  {% for s in range(y.get("start_col"), y.get("end_col") ) %}
+   <th class="{{ y.get("PMDiff").get("class").get(s) }}" >{{ y.get("PMDiff").get(s) }}</th>
+  {% endfor %}
+    </tr>
+
+    </thead>
+    <tbody>
+
+
+<tr>
+<td></td>
+</tr>
+    </tbody>
+    </table>
+<!--
+    <table>
+        <tr>
+        <td>
+            Mobile:
+            <span class="label {% if is_mobile %}label-success{% endif %}">{{ is_mobile }}</span>
+        </td>
+        </tr>
+    </table>
+-->
+
+        <hr/>
+
+<!--    <p><a href="{{ logout_url }}" class="btn btn-primary">{% trans %}Logout{% endtrans %}</a></p> -->
+
+
+{% endblock %}

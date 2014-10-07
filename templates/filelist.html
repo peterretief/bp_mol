@@ -1,0 +1,44 @@
+{% extends base_layout %}
+
+{% block header_title %}
+
+
+{% endblock %}
+
+{% block content %}
+
+<a href=/manifest/>Link to manifests</a>
+
+<hr/>
+<h1>Files</h1>
+{{list_data["count"]}}
+
+Filenames:
+
+<table class="table table-bordered table-condensed">
+    <thead>
+    <tr bgcolor="#808080">
+    <th>File name</th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    </tr>
+    </thead>
+    <tbody>
+
+<tr>
+{% for s in range(0, list_data["count"]) %}
+<td>{{list_data["filename"][s]}}</td>
+<td><a href=/vessellist/{{list_data["key"][s]}}><i class="icon-large icon-search icon-red"></i></a></td>
+</tr>
+{% endfor %}
+  
+    </tbody>
+    </table>
+
+        <hr/>
+
+
+{% endblock %}

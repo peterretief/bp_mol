@@ -1,0 +1,58 @@
+{% extends base_layout %}
+
+{% block header_title %}
+
+{% endblock %}
+
+{% block content %}
+
+{% if bookmark %}
+      <p><a href="?bookmark={{ bookmark }}">Next</a></p>
+{% endif %}
+
+{% if prev_bookmark %}
+      <p><a href="?prev_bookmark={{ prev_bookmark }}">Previous</a></p>
+    {% endif %}
+
+
+<table class="table table-bordered table-condensed">
+    <thead>
+    <tr bgcolor="#808080">
+    <th>Filename</th>
+    <th>Manifest detail</th>
+    <th>Ship</th>
+    <th>Voyage</th>
+    <th>Port</th>
+    <th>Manifest detail</th>
+    </tr>
+    </thead>
+    <tbody>
+<form id="search" action="/" method="get">
+<input type="text" name="search" id="search" ></text>
+<button type="submit" value="Submit">Search</button>
+</form>
+
+<tr>
+{% for s in data %}
+<td>{{s.voyage_link}}</td>
+<td><a href=/manifest_detail/{{s.key.id()}}>{{s.key.id()}}</a></td>
+<td>{{s.vessel_name}}</td>
+<td>{{s.voyage}}</td>
+<td>{{s.port}}</td>
+
+<td><a href=/manifest_detail/{{s.key.id()}}><i class="icon-large icon-search icon-red"></i></a></td>
+
+<td><a href=/vesselview/{{s.vessel.get().key.id() if s.vessel != None }}>{{s.vessel.get().loaded if s.vessel != None }}</a></td>
+
+
+
+</tr>
+{% endfor %}
+
+  
+</table>
+
+        <hr/>
+
+
+{% endblock %}

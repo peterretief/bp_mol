@@ -1,0 +1,65 @@
+{% extends base_layout %}
+
+{% block header_title %}
+
+{% endblock %}
+
+{% block content %}
+
+<h5><a href="/filelist"><<</a> Filename:{{file_data["filename"]}} Ship: {{file_data["vesselname"]}} Voyage: {{file_data["voyage1"]}}</h5>
+
+{{file_data["date_of_loading1"]}}
+
+<table class="table table-bordered table-condensed">
+    <thead>
+    <tr bgcolor="#808080">
+    <th>Load date</th>
+    <th>Sheet name</th>
+    <th>Vessel name</th>
+    <th>Voyage</th>
+    <th>Product</th>
+    <th>Port</th>
+    </tr>
+    </thead>
+    <tbody>
+<tr>
+
+{% for s in range(0, file_data["no_sheets"]) %}
+{% for g in range(0, file_data["date_of_loading1"][s]["cnt"]  ) %}
+
+{% if not file_data["vesselname"][s] == "" %}
+
+<td>{{file_data["date_of_loading1"][s][g]}}</td>
+
+<td>{{file_data["sheetname"][s]}}</td>
+<td>{{file_data["vesselname1"][s]}}</td>
+<td>{{file_data["voyage1"][s]}}</td>
+<td>{{file_data["product1"][s]}}</td>
+<td>{{file_data["port"][s]}}</td>
+<td><a href=/containerlist/{{file_data["key"]}}/{{file_data["sheetname"][s]}} ><i class="icon-large icon-search"></i></a></td>
+
+{% endif %}
+</tr>
+{% endfor %}
+
+{% endfor %}
+  
+    </tbody>
+    </table>
+
+    <table>
+        <tr>
+        <td>
+            Mobile:
+            <span class="label {% if is_mobile %}label-success{% endif %}">{{ is_mobile }}</span>
+        </td>
+        </tr>
+    </table>
+
+
+        <hr/>
+
+    <p><a href="{{ logout_url }}" class="btn btn-primary">{% trans %}Logout{% endtrans %}</a></p>
+
+
+{% endblock %}

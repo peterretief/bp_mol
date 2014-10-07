@@ -1,0 +1,41 @@
+{% extends base_layout %}
+
+{% block header_title %}
+
+{% endblock %}
+
+{% block content %}
+
+
+<table class="table table-bordered table-condensed">
+    <thead>
+    <tr bgcolor="#808080">
+    <th>Vessel</th>
+    <th>Voyage</th>
+    <th>Port</th>
+    <th>Load date</th>
+    <th></th>
+    <tbody>
+
+<tr>
+<td>{{y.vessel}}</td>
+<td>{{y.voyage}}</td>
+<td>{{y.port}}</td>
+<td>{{y.loaded}}</td>
+</tr>
+
+    <thead>
+    <tr bgcolor="#808080">
+    <th>Container</th>
+    <th>ppecbcode</th>
+    <th>Vent</th>
+    <th>Setpoint</th>
+    <th></th>
+
+  
+</table>
+
+
+
+
+{% endblock %}

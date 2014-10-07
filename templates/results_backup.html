@@ -1,0 +1,125 @@
+{% extends base_layout %}
+
+{% block header_title %}
+
+<h4>VESSEL: {{ d_dict.get('vesselname') }}</h4>
+<h4>{{ d_dict.get('port') }}</h4>
+<h4>VOYAGE: {{ d_dict.get('voyage') }}</h4>
+<h4>PRODUCT: {{ d_dict.get('product') }}</h4>
+<h4>DATE of LOADING:  {{ d_dict.get('date_of_loading') }}</h4>
+
+{% endblock %}
+
+{% block content %}
+
+<table class="table table-striped" width="647" border="1">
+    <thead>
+    <tr>
+    <th></th>
+    <th>Container Number</th>
+    <th>PPECB Code</th>
+    <th>Vent Setting</th>
+    <th>Set Point</th>
+    <th>Status</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+    <tr>
+    <td>1</td>
+    <td>{{container1}}</td>
+    <td>{{ppecb_code1}}</td>
+    <td>{{vent1}}</td>
+    <td>{{setpoint1}}</td>
+    <td><button type="button" class="btn btn-success">****</button></td>
+    </tr>
+    
+    <tr>
+    <td>2</td>
+    <td>{{container2}}</td>
+    <td>{{ppecb_code2}}</td>
+    <td>{{vent2}}</td>
+    <td>{{setpoint2}}</td>
+    <td><button type="button" class="btn btn-info">****</button></td>
+    </tr>
+
+
+    <tr>
+    <td>3</td>
+    <td>{{container3}}</td>
+    <td>{{ppecb_code3}}</td>
+    <td>{{vent3}}</td>
+    <td>{{setpoint3}}</td>
+    <td><button type="button" class="btn btn-warning">****</button></td>
+    </tr>
+    
+    </tbody>
+    </table>
+
+   <h5>Showing container: {{container1}}</h5>
+
+
+<dl>
+{% for key in d_dict.iteritems() %}
+
+{{ key }}
+
+
+{% endfor %}
+</dl>
+
+
+<table class="table table-striped" width="647" border="1">
+
+    <thead>
+    <tr>
+    <th></th>
+{% for k, v in data_.iteritems() %}
+    <th><u>{{k+1}} day:</u> <i>{{v}}</i></th>
+{% endfor %}
+    </tr>
+    </thead>
+
+    <tbody>
+
+    <tr>
+    <td>DA</td>
+    <td>{{DAtemp1}}</td>
+    <td>{{DAtemp2}}</td>
+    <td>{{DAtemp3}}</td>
+    <td></td>
+    <td></td>
+    </tr>
+    
+    <tr>
+    <td>RA</td>
+    <td>{{RAtemp1}}</td>
+    <td>{{RAtemp2}}</td>
+    <td>{{RAtemp3}}</td>
+    <td></td>
+    <td></td>
+    </tr>
+
+    
+    </tbody>
+    </table>
+
+
+
+    <table>
+        <tr>
+        <td>
+            Mobile:
+            <span class="label {% if is_mobile %}label-success{% endif %}">{{ is_mobile }}</span>
+        </td>
+        </tr>
+    </table>
+
+
+        <hr/>
+
+    <p><a href="{{ logout_url }}" class="btn btn-primary">{% trans %}Logout{% endtrans %}</a></p>
+
+
+{% endblock %}

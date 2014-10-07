@@ -1,0 +1,44 @@
+{% extends base_layout %}
+
+{% block header_title %}
+
+{% endblock %}
+
+{% block content %}
+
+ 
+<table class="table table-bordered table-condensed">
+    <thead>
+    <tr bgcolor="#808080">
+    <th>booking_number</th>
+    <th>container</th>
+    <th>sfx</th>
+    <th>commodity</th>
+    <th>disch_port</th>
+    <th>temp</th>
+    <th>code</th>
+    <th>vents</th>
+    <th>empty_dsp</th>
+    <th>count</th>
+    </tr>
+    </thead>
+    <tbody>
+
+<tr>
+{% for s in l %}
+<td>{{s.booking_number}}</td>
+<td>{{s.container_number}}</td>
+<td>{{s.sfx}}</td>
+<td>{{s.commodity}}</td>
+<td>{{s.disch_port}}</td>
+<td>{{s.temp}}</td>
+<td>{{s.code}}</td>
+<td>{{s.vents}}</td>
+<td>{{s.empty_dsp}}</td>
+<td>{{s.count}}</td>
+</tr>
+{% endfor %}
+
+
+
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends base_layout %}
+
+{% block header_title %}
+
+
+{% endblock %}
+
+{% block content %}
+
+<table class="table table-bordered table-condensed">
+    <thead>
+    <tr>
+    <th></th>
+    <th>Container</th>
+    <th>ppecbcode</th>
+    <th>Vent</th>
+    <th>SetPoint</th>
+    </tr>
+    </thead>
+    <tbody>
+
+<tr>
+{% set d = 0 %}
+{% for s in range(y["start"], y["rows"], 2) %}
+{% set d = d + 1 %}
+{% if not y["container"][s] == ""  %}
+<td>{{d}}</td>
+<td>{{y["container"][s]}}</td>
+<td>{{y["container"]["ppecbcode"][s]}}</td>
+<td>{{y["container"]["vent"][s]}}</td>
+<td>{{y["container"]["setpoint"][s]}}</td>
+<td class="{{y.get("colour").get(s)}}"><a href=/readingslist/{{y["filekey"]}}/{{y["sheet_name"]}}/{{s}}><i class="icon-large icon-search"></i></a></td>
+{% endif %}
+</tr>
+{% endfor %}
+  
+    </tbody>
+    </table>
+<!--
+    <table>
+        <tr>
+        <td>
+            Mobile:
+            <span class="label {% if is_mobile %}label-success{% endif %}">{{ is_mobile }}</span>
+        </td>
+        </tr>
+    </table>
+-->
+
+        <hr/>
+
+<!--   <p><a href="{{ logout_url }}" class="btn btn-primary">{% trans %}Logout{% endtrans %}</a></p>  -->
+
+
+{% endblock %}

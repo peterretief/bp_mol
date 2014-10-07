@@ -1,0 +1,38 @@
+{% extends base_layout %}
+
+{% block header_title %}
+
+{% endblock %}
+
+{% block content %}
+
+<table class="table table-bordered table-condensed">
+    <thead>
+    <tr bgcolor="#808080">
+    <th>Port</th>
+    <th>Vessel</th>
+    <th>Voyage</th>
+    <th>Date of load</th>
+    </tr>
+    </thead>
+    <tbody>
+<tr>
+{% for s in range(0, y.get("nsheets"))%}
+<td>{{y.get("sheetname").get(s)}}</td>
+<td>{{y.get("vesselname").get(s)}}</td>
+<td>{{y.get("voyage").get(s)}}</td>
+{% if not (y.get("date_of_loading").get(s) == 'None') %}
+<td>{{y.get("date_of_loading").get(s)}}</td>
+<td class="{{y.get("colour")}}"><a href=/containerlist/{{y.get("key")}}/{{y.get("index").get(s)}} ><i class="icon-large icon-search"></i></a></td>
+{% endif %}
+
+</tr>
+{% endfor %}
+</table>
+
+
+
+        <hr/>
+
+
+{% endblock %}

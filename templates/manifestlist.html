@@ -1,0 +1,75 @@
+{% extends base_layout %}
+
+{% block header_title %}
+
+{% endblock %}
+
+{% block content %}
+
+<table class="table table-bordered table-condensed">
+    <thead>
+    <tr bgcolor="#808080">
+    <th>Vessel</th>
+    <th>Voyage</th>
+    <th>Port</th>
+    </tr>
+    </thead>
+    <tbody>
+
+<tr>
+<td>{{y["vessel"]}}</td>
+<td>{{y["voyage"]}}</td>
+<td>{{y["port"]}}</td>
+</tr>
+
+    <tr bgcolor="#808080">
+    <th>Booking number</th>
+    <th>SFX</th>
+    <th>Container No</th>
+    <th>Commodity</th>
+    <th>Discharge Port</th>
+    <th>Temp</th>
+    <th>Code</th>
+    <th>Vents</th>
+    <th>EQP Type</th>
+    <th>Empty DSP</th>
+    <th>Count</th>
+    </tr>
+
+{% for d in range(5, y.get("numrows")) %}
+<tr>
+<td>{{y["acv"][d][0]}}</td>
+<td>{{y["acv"][d][1]}}</td>
+<td>{{y["acv"][d][2]}}</td>
+<td>{{y["acv"][d][3]}}</td>
+<td>{{y["acv"][d][4]}}</td>
+
+<td>{{y["myfloat"][d]}}</td>
+
+<td>{{y["acv"][d][6]}}</td>
+<td>{{y["acv"][d][7]}}</td>
+<td>{{y["acv"][d][8]}}</td>
+<td>{{y["acv"][d][9]}}</td>
+<td>{{y["acv"][d][10]}}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+
+    <table>
+        <tr>
+        <td>
+            Mobile:
+            <span class="label {% if is_mobile %}label-success{% endif %}">{{ is_mobile }}</span>
+        </td>
+        </tr>
+    </table>
+
+
+        <hr/>
+
+  <!--  <p><a href="{{ logout_url }}" class="btn btn-primary">{% trans %}Logout{% endtrans %}</a></p> -->
+
+
+{% endblock %}

@@ -32,7 +32,7 @@
 <button type="submit" value="Submit">Search</button>
 </form>
 
-<tr>
+<tr  bgcolor="#B3B3B3">
 {% for s in data %}
 <td>{{s.voyage_link}}</td>
 <td><a href=/manifest_detail/{{s.key.id()}}>{{s.key.id()}}</a></td>

@@ -38,31 +38,36 @@ import models
 
 from decimal import *
 
-#from datetime import datetime
-
 from google.appengine.api import search
-
-#index = search.Index(name='manifestsearch1')
 
 _INDEX_NAME = 'vesselname'
 _INDEX_NAME1 = 'booking_number'
 _INDEX_VESSEL = 'vessel'
 
+def validate(date_text):
+    try:
+        datetime.strptime(date_text, '%Y-%m-%d')
+    except ValueError:
+        raise ValueError("Incorrect data format, should be YYYY-MM-DD")
 
-def CreateDocument(text,sheet, row, col):
+def CreateDocument(text, date_,num,sheet, row, col ):
     return search.Document(
         fields=[search.TextField(name='text', value=text),
+                search.DateField(name='date_', value=date_.date()),
+                search.NumberField(name='num', value=num),
                 search.TextField(name='sheet', value=sheet),
                 search.NumberField(name='row', value=row),
                 search.NumberField(name='col', value=col),
                 search.DateField(name='date', value=datetime.now().date())])
 
+"""
 def CreateVesselData(text, row, col):
     return search.Document(
         fields=[search.TextField(name='text', value=text),
                 search.NumberField(name='row', value=row),
                 search.NumberField(name='col', value=col),
                 search.DateField(name='date', value=datetime.now().date())])
+"""
 
 def logIndexes():
 	for index in search.get_indexes(fetch_schema=True):
@@ -101,7 +106,6 @@ class TestHandler(BaseHandler):
 		  		"y": y,
 	    			}
 		return self.render_template("testman.html", **params)
-
 
 
 #*******
@@ -179,16 +183,14 @@ class getTestFile(BaseHandler):
 		return self.render_template("testman.html", **params)
 
 
-
 def getWorkbook(filekey):
 	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
 	return wb
 
 def addVesselData(wb, filename):
-# for with 
-        delete_all_in_index('test1index')
 	dictd = lambda: defaultdict(dictd)
 	y = dictd()
+        delete_all_in_index(filename)
 	for i, x in enumerate(wb.sheets()):
 		header_cells = x.row(0)
     		sh = wb.sheet_by_index(i)
@@ -198,8 +200,7 @@ def addVesselData(wb, filename):
     		mid_row = 0
     		header = [each.value for each in header_cells]
     		if not 'MOL REEFER MANIFEST' in header:
-                        delete_all_in_index(filename)
-			y["header"] = "shipfile"
+#			y["header"] = "shipfile"
 	    		while curr_row < num_rows:
 	        		curr_row += 1
 	        		row = [int(each.value)
@@ -216,13 +217,20 @@ def addVesselData(wb, filename):
 			            cell_type = sh.cell_type(curr_row, curr_cell)
      	                            cell_value = sh.cell_value(curr_row, curr_cell)
                                     if (cell_type==1):
-					search.Index(name=filename).put(CreateDocument(cell_value,sh.name, int(curr_row), int(curr_cell)))
-#                                        print cell_value 
+					search.Index(name=filename).put(CreateDocument(cell_value,datetime.now(),0 ,sh.name, int(curr_row), int(curr_cell)))
+                                    if (cell_type==3):
+					try:
+						a1_as_datetime = datetime(*xlrd.xldate_as_tuple(cell_value, 0)[0:6])
+						search.Index(name=filename).put(CreateDocument("", a1_as_datetime,0 ,sh.name,int(curr_row), int(curr_cell)))
+					except:
+						pass #if i cant read it i cant use it
+                                    if (cell_type==2):
+					search.Index(name=filename).put(CreateDocument("",datetime.now(),int(cell_value),sh.name, int(curr_row), int(curr_cell)))
 
 
+"""
 def CreateDocumentManifestDetail(manifest,booking_number,sfx, container_number,commodity,disch_port,temp,code,vents, vessel_name, voyage, port):
     author = ""
-    """Creates a search.Document from content written by the author."""
     if author:
         nickname = author.nickname().split('@')[0]
     else:
@@ -245,7 +253,7 @@ def CreateDocumentManifestDetail(manifest,booking_number,sfx, container_number,c
                 search.TextField(name="port", value=port),
 
                 search.DateField(name="updated", value=datetime.now().date())])
-
+"""
 
 def SaveManifestDetail(manifest_key, y, count, vessel_name, voyage, port):
 	man_detail = models.ManifestDetail()

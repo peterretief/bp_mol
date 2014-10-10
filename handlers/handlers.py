@@ -155,41 +155,6 @@ def index_search(query_string,indexname):
 	except search.Error:
 		logging.exception('Search failed')
 
-
-
-class UpdateContainerStatus(BaseHandler):
-	def get(self):
-		query = models.ManifestDetail.query().order(-models.ManifestDetail.created)
-		data = query.fetch(100)
-		for d in data:
-			a = self.search(d.container_number)
-			if (a):
-#				d.voyage_link = a[1]
-				updateContainerStatus(a[1])
-				d.container_status=True
-				d.put()
-
-		params = {
-	  		"y": a,
-    			}
-		return self.render_template("testman.html", **params)
-
-	def search(self, query_string):
-		#iterate through indexes
-		for index in search.get_indexes(fetch_schema=True):
-			if not "manifest" in index.name:
-   			    index = search.Index(name=index.name)
-			    index_name = index.name
-			try:
-			    results = index.search(query_string)
-			    # Iterate over the documents in the results
-			    for scored_document in results:
-				return results, index.name
- 			       # handle results
-
-			except search.Error:
-    				logging.exception('Search failed')
-
                                
 class UpdateLinks(BaseHandler):
 	def get(self):
@@ -199,8 +164,8 @@ class UpdateLinks(BaseHandler):
 			a = self.search(d.voyage)
 			if (a):
 				d.voyage_link = a[1]
+				updateContainerStatus(a[1])
 				d.put()
-
 		params = {
 	  		"y": a,
     			}

@@ -20,6 +20,7 @@ _routes = [
     #first
     RedirectRoute('/save_manifest1/<keyval>', handlers.SaveManifestHandler1, name='savemanifest1', strict_slash=True),
 
+    RedirectRoute('/serve/([^/]+)?', handlers.ServeHandler, name='serve_handler', strict_slash=True),
 
     RedirectRoute('/update_links/', handlers.UpdateLinks, name='updatelinks', strict_slash=True),
 

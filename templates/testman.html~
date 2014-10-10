@@ -2,13 +2,17 @@
 
 {% block header_title %}
 
+<hl\>
+<a href="/">Home</a>
+||
+<a href="/secure">Add files</a>
+
+
 {% endblock %}
 
 {% block content %}
 
 {{y}}
 
-<hl\>
-<a href="/secure/">Back to add file</a>
 
 {% endblock %}

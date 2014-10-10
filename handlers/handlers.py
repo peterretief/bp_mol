@@ -49,6 +49,13 @@ _INDEX_NAME1 = 'booking_number'
 _INDEX_VESSEL = 'vessel'
 
 
+class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
+  def get(self, resource):
+    #resource = str(urllib.unquote(resource))
+    blob_info = blobstore.BlobInfo.get(resource)
+    self.send_blob(blob_info)
+
+
 def CreateDocument(text,sheet, row, col):
     return search.Document(
         fields=[search.TextField(name='text', value=text),
@@ -148,9 +155,7 @@ class UpdateLinks(BaseHandler):
 	def search(self, query_string):
 		#iterate through indexes
 		for index in search.get_indexes(fetch_schema=True):
-			if not "manifest" in index.name:
-   			    index = search.Index(name=index.name)
-			    index_name = index.name
+	        	index = search.Index(name=index.name)
 			try:
 			    results = index.search(query_string)
 			    # Iterate over the documents in the results
@@ -172,7 +177,6 @@ class getTestFile(BaseHandler):
 			wb = xlrd.open_workbook(file_contents=blobstore.BlobReader("gTVCfxI_4_-lNK1L1lmKKQ==").read())
 			y = addVesselData(wb)
 
-
 			params = {
 		  		"y": y,
 	    			}
@@ -185,8 +189,6 @@ def getWorkbook(filekey):
 	return wb
 
 def addVesselData(wb, filename):
-# for with 
-        delete_all_in_index('test1index')
 	dictd = lambda: defaultdict(dictd)
 	y = dictd()
 	for i, x in enumerate(wb.sheets()):
@@ -217,7 +219,7 @@ def addVesselData(wb, filename):
      	                            cell_value = sh.cell_value(curr_row, curr_cell)
                                     if (cell_type==1):
 					search.Index(name=filename).put(CreateDocument(cell_value,sh.name, int(curr_row), int(curr_cell)))
-#                                        print cell_value 
+
 
 
 def CreateDocumentManifestDetail(manifest,booking_number,sfx, container_number,commodity,disch_port,temp,code,vents, vessel_name, voyage, port):
@@ -432,7 +434,7 @@ class SaveManifestHandler1(BaseHandler):
     		blob_info = blobstore.BlobInfo.get(resource)
 
 		wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(blob_info.key()).read())
-                v = addVesselData(wb, blob_info.filename.replace(" ", ""))
+                v = addVesselData(wb, str(blob_info.key()))
 		y = makeManifestPickle(wb)
 		if (y["header"] == "manifest"):
 			if not (models.Manifest().find_duplicate(y["vessel"],y["voyage"],y["port"])):

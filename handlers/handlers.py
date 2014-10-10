@@ -50,18 +50,7 @@ def validate(date_text):
     except ValueError:
         raise ValueError("Incorrect data format, should be YYYY-MM-DD")
 
-<<<<<<< HEAD
 def CreateDocument(text, date_,num,sheet, row, col ):
-=======
-class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
-  def get(self, resource):
-    #resource = str(urllib.unquote(resource))
-    blob_info = blobstore.BlobInfo.get(resource)
-    self.send_blob(blob_info)
-
-
-def CreateDocument(text,sheet, row, col):
->>>>>>> de9b0c7294d318cd361cbeecf4174052ff6d69bb
     return search.Document(
         fields=[search.TextField(name='text', value=text),
                 search.DateField(name='date_', value=date_.date()),
@@ -185,7 +174,9 @@ class UpdateLinks(BaseHandler):
 	def search(self, query_string):
 		#iterate through indexes
 		for index in search.get_indexes(fetch_schema=True):
-	        	index = search.Index(name=index.name)
+			if not "manifest" in index.name:
+   			    index = search.Index(name=index.name)
+			    index_name = index.name
 			try:
 			    results = index.search(query_string)
 			    # Iterate over the documents in the results
@@ -206,6 +197,7 @@ class getTestFile(BaseHandler):
 			filekey = fkey[dat]
 			wb = xlrd.open_workbook(file_contents=blobstore.BlobReader("gTVCfxI_4_-lNK1L1lmKKQ==").read())
 			y = addVesselData(wb)
+
 
 			params = {
 		  		"y": y,
@@ -247,7 +239,6 @@ def addVesselData(wb, filename):
 			            cell_type = sh.cell_type(curr_row, curr_cell)
      	                            cell_value = sh.cell_value(curr_row, curr_cell)
                                     if (cell_type==1):
-<<<<<<< HEAD
 					search.Index(name=filename).put(CreateDocument(cell_value,datetime.now(),0 ,sh.name, int(curr_row), int(curr_cell)))
                                     if (cell_type==3):
 					try:
@@ -260,12 +251,6 @@ def addVesselData(wb, filename):
 
 
 """
-=======
-					search.Index(name=filename).put(CreateDocument(cell_value,sh.name, int(curr_row), int(curr_cell)))
-
-
-
->>>>>>> de9b0c7294d318cd361cbeecf4174052ff6d69bb
 def CreateDocumentManifestDetail(manifest,booking_number,sfx, container_number,commodity,disch_port,temp,code,vents, vessel_name, voyage, port):
     author = ""
     if author:
@@ -477,7 +462,7 @@ class SaveManifestHandler1(BaseHandler):
     		blob_info = blobstore.BlobInfo.get(resource)
 
 		wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(blob_info.key()).read())
-                v = addVesselData(wb, str(blob_info.key()))
+                v = addVesselData(wb, blob_info.filename.replace(" ", ""))
 		y = makeManifestPickle(wb)
 		if (y["header"] == "manifest"):
 			if not (models.Manifest().find_duplicate(y["vessel"],y["voyage"],y["port"])):

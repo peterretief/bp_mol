@@ -39,192 +39,60 @@ import models
 from decimal import *
 
 #from datetime import datetime
-from google.appengine.api import search 
+
+from google.appengine.api import search
+
+#index = search.Index(name='manifestsearch1')
+
+_INDEX_NAME = 'vesselname'
+_INDEX_NAME1 = 'booking_number'
+_INDEX_VESSEL = 'vessel'
 
 
-#start of data
-C_START = 32
+class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
+  def get(self, resource):
+    #resource = str(urllib.unquote(resource))
+    blob_info = blobstore.BlobInfo.get(resource)
+    self.send_blob(blob_info)
 
-#search 
 
-def CreateDocument(author, content):
-    """Creates a search.Document from content written by the author."""
-    if author:
-        nickname = author.nickname().split('@')[0]
-    else:
-        nickname = 'anonymous'
-    # Let the search service supply the document id.
+def CreateDocument(text,sheet, row, col):
     return search.Document(
-        fields=[search.TextField(name='author', value=nickname),
-                search.TextField(name='comment', value=content),
+        fields=[search.TextField(name='text', value=text),
+                search.TextField(name='sheet', value=sheet),
+                search.NumberField(name='row', value=row),
+                search.NumberField(name='col', value=col),
                 search.DateField(name='date', value=datetime.now().date())])
 
+def CreateVesselData(text, row, col):
+    return search.Document(
+        fields=[search.TextField(name='text', value=text),
+                search.NumberField(name='row', value=row),
+                search.NumberField(name='col', value=col),
+                search.DateField(name='date', value=datetime.now().date())])
 
-#end search
-
-class RowsHandler(BaseHandler):
-	def get(self):
-		filekey = 'blT2aDd3psW_p679qUmlog=='
-		wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
-		xl = exc.readexcel("filename.xls")
-                sheetnames = xl.worksheets()
-	        for sheet in sheetnames:
-			pass
-#	            print sheet
-#	            for row in xl.getiter(sheet):
-#			pass
-	                # Do Something here
+def logIndexes():
+	for index in search.get_indexes(fetch_schema=True):
+    		logging.info("index %s", index.name)
+    		logging.info("schema: %s", index.schema)
 
 
-		filekey = blobstore.BlobInfo.all()[3].key()
+def delete_all_in_index(index_name):
+    """Delete all the docs in the given index."""
+    doc_index = search.Index(name=index_name)
 
-		wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
+    # looping because get_range by default returns up to 100 documents at a time
+    while True:
+        # Get a list of documents populating only the doc_id field and extract the ids.
+        document_ids = [document.doc_id
+                        for document in doc_index.get_range(ids_only=True)]
+        if not document_ids:
+            break
+        # Delete the documents for the given ids from the Index.
+        doc_index.delete(document_ids)
 
-		sh = wb.sheet_by_index(0)
-
-		data = []
-		for rownum in range(sh.nrows):
-		        rows = sh.row_values(rownum)
-		        col1 = rows[0]
-		        col2 = rows[1]
-			data.append(col1)
-			data.append(col2)
-
-		params = {
-			"y": data,
-    			}
-		return self.render_template("filerows.html", **params)
-
-
+#C_START = 32
 #++++++++++++++++++++++++global methods+++++++++++++++++++++++++++
-def validate(date_text):
-    try:
-	datetime.strptime(date_text,'%d-%m-%Y')
-	return 1
-    except:
-        return 0
-
-
-def getWorkbook(filekey):
-	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
-	return wb
-
-def makePickle(filekey):
-	dictd = lambda: defaultdict(dictd)
-	y = dictd()
-	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
-	for i, x in enumerate(wb.sheets()):
-    		header_cells = x.row(0)
-    		sh = wb.sheet_by_index(i)
-    		num_rows = x.nrows - 1
-    		curr_row = 0
-    		mid_row = 0
-    		header = [each.value for each in header_cells]
-    		if 'MOL REEFER MANIFEST' in header:
-        		y["manifest"] = 'MOL REEFER MANIFEST'
-	    		while curr_row < num_rows:
-	        		curr_row += 1
-
-	        		row = [int(each.value)
-	               		if isinstance(each.value, float)
-	               		else each.value
-	               		for each in sh.row(curr_row)]
-
-	        		value_dict = dict(zip(header, row))
-	        		value_dict['title'] = x.name
-	        		if 'Vessel:' in row:
-	           			y["voyage"] = row[row.index('Voyage:')+1]
-	           			y["vessel"] = row[row.index('Vessel:')+1]
-	           			y["port"] = row[row.index('Port:')+1]
-	        		if 'BOOKING NO' in row:
-	           			y["labels"] = row
-	           			mid_row = curr_row+1
-
-		        	y["acv"][curr_row] = row
-				y["myfloat"][curr_row] = sh.cell_value(curr_row,5)
-				y["numrows"] = num_rows+1
-
-
-		else:
-
-			y["key"] = blobstore.BlobInfo.get(filekey).key()
-			y["sheetname"][i] = sh.name
-			y["index"][i] = i
-			y["nsheets"] = wb.nsheets
-			for a in range(5, 15):
-				if "VESSEL" in sh.cell_value(a,0):
-	                                if (len(sh.cell_value(a,1)) > 0):
-						y["vesselname"][i] = sh.cell_value(a,1)
-					else:
-						y["vesselname"][i] = "NA"
-
-				if "VOYAGE" in sh.cell_value(a,0):
-	                                if (len(sh.cell_value(a,1)) > 0):
-						y["voyage"][i] = sh.cell_value(a,1)
-						y["voyage_fixed"] = sh.cell_value(a,1)
-
-					else:
-						y["voyage"][i] = "NA"
-
-
-				if "DATE of LOADING" in sh.cell_value(a,0):
-					try:
-						if (validate((datetime(*(xlrd.xldate_as_tuple(sh.cell_value(a, 1), 0))[0:6])).strftime('%d-%m-%Y'))):
-							y["date_of_loading"][i] = (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(a, 1), 0))[0:6])).strftime('%d-%m-%Y')
-					except:
-						y["date_of_loading"][i] = "None"
-
-
-
-			y["colour"] = "lightred"
-
-			#y["bool"] = addDataFilename(y["vesselname"][i],	y["voyage_fixed"], "", i, y["date_of_loading"][i])
-
-
-	return y
-
-
-"""
-def addDataFilename(vesselname, voyage, blob_key, sheet, date_loading):
-	try:
-		newd = models.FileList()
-		newd.vessel = vesselname
-		newd.voyage = voyage
-#		newd.manifest = get_voyage(voyage).key
-#		newd.blob = blob_key
-       		newd.put()
-	except:
-		return 0
-
-def readingList(filekey):
-	dictd = lambda: defaultdict(dictd)
-	y = dictd()
-	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
-	sh = wb.sheet_by_index(int(sheet_name))
-#find col were readings start
-	for a in range(0, 10):
-		y["DAT"] = sh.cell_value(row, a)
-		try:
-			if "Dat/Sup" in y["DAT"]:
-				start_col = a+1
-		except:
-			pass
-
-        row = int(row)
-	cols = sh.ncols
-	y["filename"] = blobstore.BlobInfo.get(filekey).filename
-	y["product"] = sh.cell_value(10,1)
-
-	end_col = 22
-
-    	params = {
-	    "y": y,
-
-    	}
-   	return params
-
-"""
-#++++++++++++++++++++++++++base handlers+++++++++++++++++++++++++++++++
 
 class TestHandler(BaseHandler):
 	def get(self):
@@ -235,74 +103,153 @@ class TestHandler(BaseHandler):
 			wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
 			y = makeVesselPickle(wb)
 
+
 			params = {
 		  		"y": y,
 	    			}
 		return self.render_template("testman.html", **params)
 
-def makeVesselPickle(wb):
+
+
+#*******
+def printWorkbook(wb):
 	dictd = lambda: defaultdict(dictd)
 	y = dictd()
 	for i, x in enumerate(wb.sheets()):
-   		header_cells = x.row(0)
-		sh = wb.sheet_by_index(i)
-
-		num_rows = x.nrows - 1
+		header_cells = x.row(0)
+    		sh = wb.sheet_by_index(i)
+    		num_rows = x.nrows - 1
     		curr_row = 0
-		header = [each.value for each in header_cells]
-    		if 'MOL REEFER MANIFEST' in header:
-			y["header"] = "manifest"
-		else:
+    		mid_row = 0
+    		header = [each.value for each in header_cells]
+    		if not 'MOL REEFER MANIFEST' in header:
+			y["header"] = "shipfile"
+	    		while curr_row < num_rows:
+	        		curr_row += 1
+	        		row = [int(each.value)
+	               		if isinstance(each.value, float)
+	               		else each.value
+	               		for each in sh.row(curr_row)]
+                 		value_dict = dict(zip(header, row))
+	        		value_dict['title'] = x.name
+                                # Cell Types: 0=Empty, 1=Text, 2=Number, 3=Date, 4=Boolean, 5=Error, 6=Blank
+                                #print row 
+ 
 
-			y["sheetname"][i] = sh.name
-			y["index"][i] = i
-			y["nsheets"] = wb.nsheets
-			for a in range(5, 15):
-				if "VESSEL" in sh.cell_value(a,0):
-	                                if (len(sh.cell_value(a,1)) > 0):
-						y["vesselname"][i] = sh.cell_value(a,1)
-						vessel_name = sh.cell_value(a,1)
-						a_vessel = models.Vessel()
-						a_vessel.vessel=sh.cell_value(a,1).strip()
-						a_vessel.port=sh.name
-					else:
-						y["vesselname"][i] = "NA"
+                               
+class UpdateLinks(BaseHandler):
+	def get(self):
+		query = models.Manifest.query().order(-models.Manifest.created)
+		data = query.fetch(100)
+		for d in data:
+			a = self.search(d.voyage)
+			if (a):
+				d.voyage_link = a[1]
+				d.put()
 
-				if "VOYAGE" in sh.cell_value(a,0):
-	                                if (len(sh.cell_value(a,1)) > 0):
-						y["voyage"][i] = sh.cell_value(a,1)
-						a_vessel.voyage=str(sh.cell_value(a,1)).strip()
-#						a_vessel.manifest = models.Vessel().find_manifest(a_vessel.voyage, a_vessel.port, vessel_name).key
-						a_vessel.manifest = models.Vessel().find_manifest(a_vessel.voyage, a_vessel.port).key
-						y["voyage_fixed"] = sh.cell_value(a,1)
+		params = {
+	  		"y": a,
+    			}
+		return self.render_template("testman.html", **params)
 
-					else:
-						y["voyage"][i] = "NA"
+	def search(self, query_string):
+		#iterate through indexes
+		for index in search.get_indexes(fetch_schema=True):
+	        	index = search.Index(name=index.name)
+			try:
+			    results = index.search(query_string)
+			    # Iterate over the documents in the results
+			    for scored_document in results:
+				return results, index.name
+ 			       # handle results
 
-
-				if "DATE of LOADING" in sh.cell_value(a,0):
-					try:
-						if (validate((datetime(*(xlrd.xldate_as_tuple(sh.cell_value(a, 1), 0))[0:6])).strftime('%d-%m-%Y'))):
-							y["date_of_loading"][i] = (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(a, 1), 0))[0:6])).strftime('%d-%m-%Y')
-							a_vessel.loaded=(datetime(*(xlrd.xldate_as_tuple(sh.cell_value(a, 1), 0))[0:6])).strftime('%d-%m-%Y')
-							a_vessel.put()
-							qry = models.Vessel.query(ancestor=a_vessel.key).get()
-
-							zz = models.Vessel().update_manifest(qry)
-
-
-
-
-					except:
-						y["date_of_loading"][i] = "None"
-
-
-			y["colour"] = "lightred"
-
-	return y
+			except search.Error:
+    				logging.exception('Search failed')
 
 
-def SaveManifestDetail(manifest_key, y, count):
+
+class getTestFile(BaseHandler):
+	def get(self):
+		get_data = blobstore.BlobInfo.all()
+		fkey = get_data.fetch(get_data.count())
+		for dat in range(0, get_data.count()):
+			filekey = fkey[dat]
+			wb = xlrd.open_workbook(file_contents=blobstore.BlobReader("gTVCfxI_4_-lNK1L1lmKKQ==").read())
+			y = addVesselData(wb)
+
+			params = {
+		  		"y": y,
+	    			}
+		return self.render_template("testman.html", **params)
+
+
+
+def getWorkbook(filekey):
+	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
+	return wb
+
+def addVesselData(wb, filename):
+	dictd = lambda: defaultdict(dictd)
+	y = dictd()
+	for i, x in enumerate(wb.sheets()):
+		header_cells = x.row(0)
+    		sh = wb.sheet_by_index(i)
+    		num_rows = x.nrows - 1
+                num_cells = sh.ncols - 1
+    		curr_row = 0
+    		mid_row = 0
+    		header = [each.value for each in header_cells]
+    		if not 'MOL REEFER MANIFEST' in header:
+                        delete_all_in_index(filename)
+			y["header"] = "shipfile"
+	    		while curr_row < num_rows:
+	        		curr_row += 1
+	        		row = [int(each.value)
+	               		if isinstance(each.value, float)
+	               		else each.value
+	               		for each in sh.row(curr_row)]
+                 		value_dict = dict(zip(header, row))
+	        		value_dict['title'] = x.name
+#                                print row 
+                                curr_cell = -1
+		                while curr_cell < num_cells:
+			            curr_cell += 1
+			# Cell Types: 0=Empty, 1=Text, 2=Number, 3=Date, 4=Boolean, 5=Error, 6=Blank
+			            cell_type = sh.cell_type(curr_row, curr_cell)
+     	                            cell_value = sh.cell_value(curr_row, curr_cell)
+                                    if (cell_type==1):
+					search.Index(name=filename).put(CreateDocument(cell_value,sh.name, int(curr_row), int(curr_cell)))
+
+
+
+def CreateDocumentManifestDetail(manifest,booking_number,sfx, container_number,commodity,disch_port,temp,code,vents, vessel_name, voyage, port):
+    author = ""
+    """Creates a search.Document from content written by the author."""
+    if author:
+        nickname = author.nickname().split('@')[0]
+    else:
+        nickname = 'anonymous'
+    # Let the search service supply the document id.
+    return search.Document(
+        fields=[search.TextField(name='author', value=nickname),
+	        search.TextField(name="manifest", value=manifest),       
+        	search.TextField(name="booking_number", value=booking_number),
+        	search.TextField(name="sfx", value=sfx),
+                search.TextField(name="container_number", value=container_number),
+                search.TextField(name="commodity", value=commodity),
+                search.TextField(name="disch_port", value=disch_port),
+                search.TextField(name="temp", value=temp),
+                search.TextField(name="code", value=code),
+                search.TextField(name="vents", value=vents),
+
+                search.TextField(name="vessel_name", value=vessel_name),
+                search.TextField(name="voyage", value=voyage),
+                search.TextField(name="port", value=port),
+
+                search.DateField(name="updated", value=datetime.now().date())])
+
+
+def SaveManifestDetail(manifest_key, y, count, vessel_name, voyage, port):
 	man_detail = models.ManifestDetail()
 	man_detail.manifest = manifest_key
 	man_detail.booking_number = str(y["readings"][count][0])
@@ -317,25 +264,7 @@ def SaveManifestDetail(manifest_key, y, count):
 	man_detail.empty_dsp = str(y["readings"][count][9])
 	man_detail.count = count-4
 	man_detail.put()
-
-
-def SaveVesselContainers(vessel_key, y, count):
-	man_detail = models.ManifestDetail()
-	man_detail.manifest = manifest_key
-	man_detail.booking_number = str(y["readings"][count][0])
-	man_detail.sfx = str(y["readings"][count][1])
-	man_detail.container_number = str(y["readings"][count][2])
-	man_detail.commodity = str(y["readings"][count][3])
-	man_detail.disch_port = str(y["readings"][count][4])
-	man_detail.temp = str(y["myfloat"][count])
-	man_detail.code = str(y["readings"][count][6])
-	man_detail.vents = str(y["readings"][count][7])
-	man_detail.equipment_type = str(y["readings"][count][8])
-	man_detail.empty_dsp = str(y["readings"][count][9])
-	man_detail.count = count-4
-	man_detail.put()
-
-
+#	search.Index(name='ManifestDetail1').put(CreateDocumentManifestDetail(str(manifest_key), str(y["readings"][count][0]), str(y["readings"][count][1]), str(y["readings"][count][2]), str(y["readings"][count][3]), str(y["readings"][count][4]), str(y["myfloat"][count]),str(y["readings"][count][6]), str(y["readings"][count][7]) , vessel_name, voyage, port ))
 
 def makeManifestPickle(wb):
 	dictd = lambda: defaultdict(dictd)
@@ -369,6 +298,13 @@ def makeManifestPickle(wb):
 		        	y["readings"][curr_row] = row
 				y["myfloat"][curr_row] = sh.cell_value(curr_row,5)
 				y["numrows"] = num_rows+1
+		else:
+			num_rows = sh.nrows - 1
+			num_cells = sh.ncols - 1
+			curr_row = -1
+			while curr_row < num_rows:
+				curr_row += 1
+				row = sh.row(curr_row)
 
 	return y
 
@@ -384,7 +320,6 @@ class ManifestDetailHandler(BaseHandler):
     			}
 		return self.render_template("manifest_detail.html", **params)
 
-
 class VesselHandler(BaseHandler):
 	def get(self, keyval):
 		mykey = ndb.Key(models.Vessel, long(keyval))
@@ -398,31 +333,21 @@ class VesselHandler(BaseHandler):
     			}
 		return self.render_template("vesselview.html", **params)
 
-PAGE_SIZE=2
+
+PAGE_SIZE=20
 class ManifestHandler(BaseHandler):
     def get(self):
-#search 
-my_document = search.Document(
-    # Setting the doc_id is optional. If omitted, the search service will create an identifier.
- #   doc_id = 'PA6-5000',
-    fields=[
-       search.TextField(name='customer', value='Joe Jackson'),
-       ])
-
-       try:
-            index = search.Index(name="myIndex")
-            index.put(document)
-       except search.Error:
-            logging.exception('Put failed')
-#        
-        
         
        cursor = None
        bookmark = self.request.get('bookmark')
+       search = self.request.get('search')
        if bookmark:
            cursor = ndb.Cursor.from_websafe_string(bookmark)
-
-       query = models.Manifest.query().order(-models.Manifest.created)
+       if search:
+		query = models.Manifest.query(models.Manifest.voyage == search).order(-models.Manifest.created)
+       else:
+       		query = models.Manifest.query().order(-models.Manifest.created)
+       
        suggestions, next_cursor, more = query.fetch_page(PAGE_SIZE, start_cursor=cursor)
 
        next_bookmark = None
@@ -448,23 +373,6 @@ my_document = search.Document(
             if more:
                 next_bookmark = next_cursor.to_websafe_string()
 
-
-       #self.render_response('suggestion.html', bookmark=next_bookmark,
-       #                      suggestions=suggestions)        
-        
-        
-#       next_result = None
-#       bookmark = self.request.get('bookmark')
-#       query = models.Manifest.query().order(-models.Manifest.created)
-#       if bookmark:
-#            query = query.filter(models.Manifest.created <= bookmark)
-#       suggestions = query.fetch(PAGE_SIZE + 1)
-#       if len(suggestions) == PAGE_SIZE + 1:
-#            next_result = suggestions[-1].created
-#            suggestions = suggestions[:PAGE_SIZE]        
-        
-        #data = models.Manifest.query().order(-models.Manifest.created).fetch(10)
-        #data = models.Manifest.query().fetch(100)
         params = {
             "data": suggestions,
             "bookmark": next_bookmark,
@@ -475,13 +383,91 @@ my_document = search.Document(
 
 #++++manifest data+++++++++++++++++++++
 
+# add search index  
+def whichFile(wb):
+	dictd = lambda: defaultdict(dictd)
+	y = dictd()
+	for i, x in enumerate(wb.sheets()):
+		header_cells = x.row(0)
+    		sh = wb.sheet_by_index(i)
+    		num_rows = x.nrows - 1
+    		curr_row = 0
+    		mid_row = 0
+    		header = [each.value for each in header_cells]
+    		if 'MOL REEFER MANIFEST' in header:
+			y["header"] = "manifest"
+	    		while curr_row < num_rows:
+	        		curr_row += 1
+
+	        		row = [int(each.value)
+	               		if isinstance(each.value, float)
+	               		else each.value
+	               		for each in sh.row(curr_row)]
+
+	        		value_dict = dict(zip(header, row))
+	        		value_dict['title'] = x.name
+	        		if 'Vessel:' in row:
+	           			y["voyage"] = row[row.index('Voyage:')+1]
+	           			y["vessel"] = row[row.index('Vessel:')+1]
+	           			y["port"] = row[row.index('Port:')+1]
+	        		if 'BOOKING NO' in row:
+	           			y["labels"] = row
+
+		        	y["readings"][curr_row] = row
+				y["myfloat"][curr_row] = sh.cell_value(curr_row,5)
+				y["numrows"] = num_rows+1
+		else:
+			num_rows = sh.nrows - 1
+			num_cells = sh.ncols - 1
+			curr_row = -1
+			while curr_row < num_rows:
+				curr_row += 1
+				row = sh.row(curr_row)
+
+	return y
+
+
+
+class SaveManifestHandler1(BaseHandler):
+	def get(self, keyval):
+		resource = str(urllib.unquote(keyval))
+    		blob_info = blobstore.BlobInfo.get(resource)
+
+		wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(blob_info.key()).read())
+                v = addVesselData(wb, str(blob_info.key()))
+		y = makeManifestPickle(wb)
+		if (y["header"] == "manifest"):
+			if not (models.Manifest().find_duplicate(y["vessel"],y["voyage"],y["port"])):
+				man = models.Manifest()
+				man.blob = blob_info.key()
+				man.vessel_name = y["vessel"]
+				man.voyage = y["voyage"]
+				man.port = y["port"]
+				man.put()
+				for c in range(5, y["numrows"]):
+					SaveManifestDetail(man.key, y, c, man.vessel_name, man.voyage, man.port)
+			else:
+				y="Manifest added already"
+                         
+
+
+		params = {
+	 			"y": y,
+    			}
+		return self.render_template("testman.html", **params)
+
+
+
 class SaveManifestHandler(BaseHandler):
 	def get(self):
 		get_data = blobstore.BlobInfo.all()
 		fkey = get_data.fetch(get_data.count())
 		for dat in range(0, get_data.count()):
 			filekey = fkey[dat]
+                        
 			wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
+			v = addVesselData(wb, str(fkey[dat].filename).replace(" ", ""))
+			#if not (v == ""):
 			y = makeManifestPickle(wb)
 			if (y["header"] == "manifest"):
 				if not (models.Manifest().find_duplicate(y["vessel"],y["voyage"],y["port"])):
@@ -491,8 +477,15 @@ class SaveManifestHandler(BaseHandler):
 					man.voyage = y["voyage"]
 					man.port = y["port"]
 					man.put()
+	 #    					search.Index(name='Manifest').put(CreateDocument(y["vessel"], y["voyage"], y["port"], man))
+				           # 	if y["vessel"]:
+	            		   #		search.Index(name='Manifest').put(CreateDocument(y["vessel"], y["voyage"], y["port"], str(man.key)))
 					for c in range(5, y["numrows"]):
-						SaveManifestDetail(man.key, y, c)
+	    					SaveManifestDetail(man.key, y, c, man.vessel_name, man.voyage, man.port)
+			else:
+				y="y"
+                         
+
 
 		params = {
 	  		"y": y,
@@ -792,6 +785,20 @@ class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
 
 #+++++++system handlers++++++++++++++++++++++++
 
+class UploadHandler1(blobstore_handlers.BlobstoreUploadHandler):
+  def post(self):
+    #resource = str(urllib.unquote(resource))
+    upload_files = self.get_uploads('file')
+    blob_info = upload_files[0]
+    blobfilendb = models.UserUpload_ndb(blob=blob_info.key())
+    blobfilendb.put()
+   
+#    upload_files = self.get_uploads('file')  # 'file' is file upload field in the form
+#    blob_info = upload_files[0]
+#    self.redirect('/serve/%s' % blob_info.key())
+
+    self.redirect('/save_manifest1/%s' % blob_info.key())
+
 
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
   def post(self):
@@ -920,10 +927,10 @@ class SecureRequestHandler(BaseHandler):
             user_session['user_id'], user_session['token'])
 
         try:
-            upload_url = blobstore.create_upload_url('/upload')
+            upload_url = blobstore.create_upload_url('/upload1')
             params = {
 		"upload_url": upload_url,
-		"more_stuff": dir(xlrd),
+		#"more_stuff": dir(xlrd),
                 "user_session": user_session,
                 "user_session_object": user_session_object,
                 "user_info": user_info,

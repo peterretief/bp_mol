@@ -1,12 +1,18 @@
 {% extends base_layout %}
 
 {% block header_title %}
-     <a href="/manifest/">Show Manifest list</a>
+ <a href="/">Home</a>
+||
+<a href="/secure">Add files</a>
 
 {% endblock %}
 
 {% block content %}
 
+
+
+
+<hl>
 
 <form action="{{ upload_url }}" enctype="multipart/form-data" method="post">  
 <input type="file" name="file"><br> <input type="submit"  name="submit" value="Submit"> 

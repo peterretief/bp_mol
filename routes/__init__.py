@@ -14,6 +14,9 @@ _routes = [
     RedirectRoute('/', handlers.ManifestHandler, name='manifest', strict_slash=True),
     RedirectRoute('/secure/', handlers.SecureRequestHandler, name='secure', strict_slash=True),
     RedirectRoute('/gettest/', handlers.getTestFile, name='gettest', strict_slash=True),
+
+    RedirectRoute('/updatecontainerstatus/', handlers.UpdateContainerStatus, name='update_container_status', strict_slash=True),
+
     RedirectRoute('/test/', handlers.TestHandler, name='test', strict_slash=True),
     RedirectRoute('/add_vessel_data/', handlers.addVesselData, name='add_vessel_data', strict_slash=True),
     RedirectRoute('/save_manifest/', handlers.SaveManifestHandler, name='savemanifest', strict_slash=True),

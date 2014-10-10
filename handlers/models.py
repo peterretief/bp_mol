@@ -32,7 +32,6 @@ class Contributor(ndb.Model):
 
         return '{}|{:d}'.format(email, contributor.count)
 
-PAGE_SIZE = 2
 
 class Manifest(ndb.Model):
     	file_name = ndb.StringProperty()
@@ -82,6 +81,7 @@ class ManifestDetail(ndb.Model):
     	booking_number = ndb.StringProperty()
     	sfx = ndb.StringProperty()
     	container_number = ndb.StringProperty()
+    	container_status = ndb.BooleanProperty(default = False)
     	commodity = ndb.StringProperty()
     	disch_port = ndb.StringProperty()
     	temp = ndb.StringProperty()

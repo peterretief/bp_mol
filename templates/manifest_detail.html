@@ -27,7 +27,13 @@
 <tr>
 {% for s in l %}
 <td>{{s.booking_number}}</td>
-<td>{{s.container_number}}</td>
+
+{% if s.container_status %}
+<td style="background-color:#00FF00">{{s.container_number}}</td>
+{% else %}
+<td style="background-color:#FF0000">{{s.container_number}}</td>
+{% endif %}
+
 <td>{{s.sfx}}</td>
 <td>{{s.commodity}}</td>
 <td>{{s.disch_port}}</td>

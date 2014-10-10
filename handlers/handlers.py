@@ -132,6 +132,63 @@ def printWorkbook(wb):
                                 # Cell Types: 0=Empty, 1=Text, 2=Number, 3=Date, 4=Boolean, 5=Error, 6=Blank
                                 #print row 
  
+def updateContainerStatus(indexname):
+	query = models.ManifestDetail.query().order(-models.ManifestDetail.created)
+	data = query.fetch(100)
+	for d in data:
+		a = index_search(d.container_number, indexname)
+		#a = self.search(d.container_number)
+		if (a):
+			d.container_status=True
+			d.put()
+	return a
+
+
+def index_search(query_string,indexname):
+	index = search.Index(name=indexname)
+	try:
+	    results = index.search(query_string)
+	    # Iterate over the documents in the results
+	    for scored_document in results:
+		return results, index.name
+	       # handle results
+	except search.Error:
+		logging.exception('Search failed')
+
+
+
+class UpdateContainerStatus(BaseHandler):
+	def get(self):
+		query = models.ManifestDetail.query().order(-models.ManifestDetail.created)
+		data = query.fetch(100)
+		for d in data:
+			a = self.search(d.container_number)
+			if (a):
+#				d.voyage_link = a[1]
+				updateContainerStatus(a[1])
+				d.container_status=True
+				d.put()
+
+		params = {
+	  		"y": a,
+    			}
+		return self.render_template("testman.html", **params)
+
+	def search(self, query_string):
+		#iterate through indexes
+		for index in search.get_indexes(fetch_schema=True):
+			if not "manifest" in index.name:
+   			    index = search.Index(name=index.name)
+			    index_name = index.name
+			try:
+			    results = index.search(query_string)
+			    # Iterate over the documents in the results
+			    for scored_document in results:
+				return results, index.name
+ 			       # handle results
+
+			except search.Error:
+    				logging.exception('Search failed')
 
                                
 class UpdateLinks(BaseHandler):
@@ -354,7 +411,7 @@ class ManifestHandler(BaseHandler):
        else:
        		query = models.Manifest.query().order(-models.Manifest.created)
        
-       suggestions, next_cursor, more = query.fetch_page(PAGE_SIZE, start_cursor=cursor)
+       data, next_cursor, more = query.fetch_page(PAGE_SIZE, start_cursor=cursor)
 
        next_bookmark = None
        if more:
@@ -380,7 +437,7 @@ class ManifestHandler(BaseHandler):
                 next_bookmark = next_cursor.to_websafe_string()
 
         params = {
-            "data": suggestions,
+            "data": data,
             "bookmark": next_bookmark,
             "prev_bookmark": prev_bookmark,
                 }

@@ -7,7 +7,6 @@
 {% endblock %}
 
 {% block content %}
-
  
 <table class="table table-bordered table-condensed">
     <thead>
@@ -39,9 +38,38 @@
 <td>{{s.sfx}}</td>
 <td>{{s.commodity}}</td>
 <td>{{s.disch_port}}</td>
-<td>{{s.temp}}</td>
-<td>{{s.code}}</td>
-<td>{{s.vents}}</td>
+
+{% if s.temp_status %}
+
+<td style="background-color:#00FF00">{{s.temp}}</td>
+
+{% else %}
+
+<td style="background-color:#FF0000">{{s.temp}}</td>
+
+{% endif %}
+
+{% if s.code_status %}
+
+<td style="background-color:#00FF00">{{s.code}}</td>
+
+{% else %}
+
+<td style="background-color:#FF0000">{{s.code}}</td>
+
+{% endif %}
+
+{% if s.vents_status %}
+
+<td style="background-color:#00FF00">{{s.vents}}</td>
+
+{% else %}
+
+<td style="background-color:#FF0000">{{s.vents}}</td>
+
+{% endif %}
+
+
 <td>{{s.empty_dsp}}</td>
 <td>{{s.count}}</td>
 </tr>

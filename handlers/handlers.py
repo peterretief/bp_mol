@@ -131,13 +131,22 @@ def printWorkbook(wb):
 	        		value_dict['title'] = x.name
                                 # Cell Types: 0=Empty, 1=Text, 2=Number, 3=Date, 4=Boolean, 5=Error, 6=Blank
                                 #print row 
- 
-def updateContainerStatus(indexname):
-	query = models.ManifestDetail.query().order(-models.ManifestDetail.created)
+
+def updateCodeStatus(indexname, manifest_key):
+	query = models.ManifestDetail.query(models.ManifestDetail.manifest == manifest_key)
 	data = query.fetch(100)
 	for d in data:
 		a = index_search(d.container_number, indexname)
-		#a = self.search(d.container_number)
+		if (a):
+			d.container_status=True
+			d.put()
+	return a
+ 
+def updateContainerStatus(indexname, manifest_key):
+	query = models.ManifestDetail.query(models.ManifestDetail.manifest == manifest_key)
+	data = query.fetch(100)
+	for d in data:
+		a = index_search(d.container_number, indexname)
 		if (a):
 			d.container_status=True
 			d.put()
@@ -164,7 +173,7 @@ class UpdateLinks(BaseHandler):
 			a = self.search(d.voyage)
 			if (a):
 				d.voyage_link = a[1]
-				updateContainerStatus(a[1])
+				updateContainerStatus(a[1], d.key)
 				d.put()
 		params = {
 	  		"y": a,
@@ -188,7 +197,7 @@ class UpdateLinks(BaseHandler):
     				logging.exception('Search failed')
 
 
-
+"""
 class getTestFile(BaseHandler):
 	def get(self):
 		get_data = blobstore.BlobInfo.all()
@@ -203,7 +212,7 @@ class getTestFile(BaseHandler):
 		  		"y": y,
 	    			}
 		return self.render_template("testman.html", **params)
-
+"""
 
 def getWorkbook(filekey):
 	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
@@ -462,7 +471,7 @@ class SaveManifestHandler1(BaseHandler):
     		blob_info = blobstore.BlobInfo.get(resource)
 
 		wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(blob_info.key()).read())
-                v = addVesselData(wb, blob_info.filename.replace(" ", ""))
+                v = addVesselData(wb, str(blob_info.key()))
 		y = makeManifestPickle(wb)
 		if (y["header"] == "manifest"):
 			if not (models.Manifest().find_duplicate(y["vessel"],y["voyage"],y["port"])):

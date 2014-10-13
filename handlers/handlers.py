@@ -6,9 +6,7 @@ import logging
 import webapp2
 
 import excelreader as exc
-
 from google.appengine.ext import db
-
 from google.appengine.ext import ndb
 
 from google.appengine.api import taskqueue
@@ -40,10 +38,6 @@ from decimal import *
 
 from google.appengine.api import search
 
-_INDEX_NAME = 'vesselname'
-_INDEX_NAME1 = 'booking_number'
-_INDEX_VESSEL = 'vessel'
-
 def validate(date_text):
     try:
         datetime.strptime(date_text, '%Y-%m-%d')
@@ -60,24 +54,14 @@ def CreateDocument(text, date_,num,sheet, row, col ):
                 search.NumberField(name='col', value=col),
                 search.DateField(name='date', value=datetime.now().date())])
 
-"""
-def CreateVesselData(text, row, col):
-    return search.Document(
-        fields=[search.TextField(name='text', value=text),
-                search.NumberField(name='row', value=row),
-                search.NumberField(name='col', value=col),
-                search.DateField(name='date', value=datetime.now().date())])
-"""
-
 def logIndexes():
 	for index in search.get_indexes(fetch_schema=True):
     		logging.info("index %s", index.name)
     		logging.info("schema: %s", index.schema)
 
 
-def delete_all_in_index(index_name):
-    """Delete all the docs in the given index."""
-    doc_index = search.Index(name=index_name)
+def delete_all_in_index(index_name, namespace):
+    doc_index = search.Index(name=index_name, namespace=namespace)
 
     # looping because get_range by default returns up to 100 documents at a time
     while True:
@@ -89,202 +73,41 @@ def delete_all_in_index(index_name):
         # Delete the documents for the given ids from the Index.
         doc_index.delete(document_ids)
 
-#C_START = 32
 #++++++++++++++++++++++++global methods+++++++++++++++++++++++++++
 
 class TestHandler(BaseHandler):
 	def get(self):
-		get_data = blobstore.BlobInfo.all()
-		fkey = get_data.fetch(get_data.count())
-		for dat in range(0, get_data.count()):
-			filekey = fkey[dat]
-			wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
-			y = makeVesselPickle(wb)
+		y="test"
 
 
-			params = {
-		  		"y": y,
-	    			}
+
+		params = {
+		 		"y": y,
+	    		}
 		return self.render_template("testman.html", **params)
 
 
-#*******
-def printWorkbook(wb):
-	dictd = lambda: defaultdict(dictd)
-	y = dictd()
-	for i, x in enumerate(wb.sheets()):
-		header_cells = x.row(0)
-    		sh = wb.sheet_by_index(i)
-    		num_rows = x.nrows - 1
-    		curr_row = 0
-    		mid_row = 0
-    		header = [each.value for each in header_cells]
-    		if not 'MOL REEFER MANIFEST' in header:
-			y["header"] = "shipfile"
-	    		while curr_row < num_rows:
-	        		curr_row += 1
-	        		row = [int(each.value)
-	               		if isinstance(each.value, float)
-	               		else each.value
-	               		for each in sh.row(curr_row)]
-                 		value_dict = dict(zip(header, row))
-	        		value_dict['title'] = x.name
-                                # Cell Types: 0=Empty, 1=Text, 2=Number, 3=Date, 4=Boolean, 5=Error, 6=Blank
-                                #print row 
-
-def updateCodeStatus(indexname, manifest_key):
-	query = models.ManifestDetail.query(models.ManifestDetail.manifest == manifest_key)
-	data = query.fetch(100)
-	for d in data:
-		a = index_search(d.container_number, indexname)
-		if (a):
-			d.container_status=True
-			d.put()
-	return a
- 
-def updateContainerStatus(indexname, manifest_key):
-	query = models.ManifestDetail.query(models.ManifestDetail.manifest == manifest_key)
-	data = query.fetch(100)
-	for d in data:
-		a = index_search(d.container_number, indexname)
-		if (a):
-			d.container_status=True
-			d.put()
-	return a
-
-
-def index_search(query_string,indexname):
-	index = search.Index(name=indexname)
-	try:
-	    results = index.search(query_string)
-	    # Iterate over the documents in the results
-	    for scored_document in results:
-		return results, index.name
-	       # handle results
-	except search.Error:
-		logging.exception('Search failed')
 
                                
+"""
 class UpdateLinks(BaseHandler):
 	def get(self):
 		query = models.Manifest.query().order(-models.Manifest.created)
-		data = query.fetch(100)
+		data = query.fetch(query.count())
 		for d in data:
-			a = self.search(d.voyage)
-			if (a):
-				d.voyage_link = a[1]
-				updateContainerStatus(a[1], d.key)
-				d.put()
+			manifest_key = d.key
+			indexname = "PL08AfDu0UYiouteo6EMNA=="
+			s = updateContainerStatus(indexname, manifest_key)
 		params = {
-	  		"y": a,
+	  		"y": s,
     			}
 		return self.render_template("testman.html", **params)
 
-	def search(self, query_string):
-		#iterate through indexes
-		for index in search.get_indexes(fetch_schema=True):
-			if not "manifest" in index.name:
-   			    index = search.Index(name=index.name)
-			    index_name = index.name
-			try:
-			    results = index.search(query_string)
-			    # Iterate over the documents in the results
-			    for scored_document in results:
-				return results, index.name
- 			       # handle results
-
-			except search.Error:
-    				logging.exception('Search failed')
-
-
-"""
-class getTestFile(BaseHandler):
-	def get(self):
-		get_data = blobstore.BlobInfo.all()
-		fkey = get_data.fetch(get_data.count())
-		for dat in range(0, get_data.count()):
-			filekey = fkey[dat]
-			wb = xlrd.open_workbook(file_contents=blobstore.BlobReader("gTVCfxI_4_-lNK1L1lmKKQ==").read())
-			y = addVesselData(wb)
-
-
-			params = {
-		  		"y": y,
-	    			}
-		return self.render_template("testman.html", **params)
 """
 
 def getWorkbook(filekey):
 	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
 	return wb
-
-def addVesselData(wb, filename):
-	dictd = lambda: defaultdict(dictd)
-	y = dictd()
-        delete_all_in_index(filename)
-	for i, x in enumerate(wb.sheets()):
-		header_cells = x.row(0)
-    		sh = wb.sheet_by_index(i)
-    		num_rows = x.nrows - 1
-                num_cells = sh.ncols - 1
-    		curr_row = 0
-    		mid_row = 0
-    		header = [each.value for each in header_cells]
-    		if not 'MOL REEFER MANIFEST' in header:
-#			y["header"] = "shipfile"
-	    		while curr_row < num_rows:
-	        		curr_row += 1
-	        		row = [int(each.value)
-	               		if isinstance(each.value, float)
-	               		else each.value
-	               		for each in sh.row(curr_row)]
-                 		value_dict = dict(zip(header, row))
-	        		value_dict['title'] = x.name
-#                                print row 
-                                curr_cell = -1
-		                while curr_cell < num_cells:
-			            curr_cell += 1
-			# Cell Types: 0=Empty, 1=Text, 2=Number, 3=Date, 4=Boolean, 5=Error, 6=Blank
-			            cell_type = sh.cell_type(curr_row, curr_cell)
-     	                            cell_value = sh.cell_value(curr_row, curr_cell)
-                                    if (cell_type==1):
-					search.Index(name=filename).put(CreateDocument(cell_value,datetime.now(),0 ,sh.name, int(curr_row), int(curr_cell)))
-                                    if (cell_type==3):
-					try:
-						a1_as_datetime = datetime(*xlrd.xldate_as_tuple(cell_value, 0)[0:6])
-						search.Index(name=filename).put(CreateDocument("", a1_as_datetime,0 ,sh.name,int(curr_row), int(curr_cell)))
-					except:
-						pass #if i cant read it i cant use it
-                                    if (cell_type==2):
-					search.Index(name=filename).put(CreateDocument("",datetime.now(),int(cell_value),sh.name, int(curr_row), int(curr_cell)))
-
-
-"""
-def CreateDocumentManifestDetail(manifest,booking_number,sfx, container_number,commodity,disch_port,temp,code,vents, vessel_name, voyage, port):
-    author = ""
-    if author:
-        nickname = author.nickname().split('@')[0]
-    else:
-        nickname = 'anonymous'
-    # Let the search service supply the document id.
-    return search.Document(
-        fields=[search.TextField(name='author', value=nickname),
-	        search.TextField(name="manifest", value=manifest),       
-        	search.TextField(name="booking_number", value=booking_number),
-        	search.TextField(name="sfx", value=sfx),
-                search.TextField(name="container_number", value=container_number),
-                search.TextField(name="commodity", value=commodity),
-                search.TextField(name="disch_port", value=disch_port),
-                search.TextField(name="temp", value=temp),
-                search.TextField(name="code", value=code),
-                search.TextField(name="vents", value=vents),
-
-                search.TextField(name="vessel_name", value=vessel_name),
-                search.TextField(name="voyage", value=voyage),
-                search.TextField(name="port", value=port),
-
-                search.DateField(name="updated", value=datetime.now().date())])
-"""
 
 def SaveManifestDetail(manifest_key, y, count, vessel_name, voyage, port):
 	man_detail = models.ManifestDetail()
@@ -301,7 +124,6 @@ def SaveManifestDetail(manifest_key, y, count, vessel_name, voyage, port):
 	man_detail.empty_dsp = str(y["readings"][count][9])
 	man_detail.count = count-4
 	man_detail.put()
-#	search.Index(name='ManifestDetail1').put(CreateDocumentManifestDetail(str(manifest_key), str(y["readings"][count][0]), str(y["readings"][count][1]), str(y["readings"][count][2]), str(y["readings"][count][3]), str(y["readings"][count][4]), str(y["myfloat"][count]),str(y["readings"][count][6]), str(y["readings"][count][7]) , vessel_name, voyage, port ))
 
 def makeManifestPickle(wb):
 	dictd = lambda: defaultdict(dictd)
@@ -345,8 +167,6 @@ def makeManifestPickle(wb):
 
 	return y
 
-#+++++
-
 class ManifestDetailHandler(BaseHandler):
 	def get(self, keyval):
 		mykey = ndb.Key(models.Manifest, keyval)
@@ -361,10 +181,6 @@ class VesselHandler(BaseHandler):
 	def get(self, keyval):
 		mykey = ndb.Key(models.Vessel, long(keyval))
 		y = models.Vessel.query(models.Vessel.key==mykey).get()
-	#	y = models.Vessel.query(ancestor=a_vessel.key).get()
-
-#		mykey = ndb.Key(models.Vessel, keyval)
-#		y = models.Vessel(ancestor=mykey).query().get()
 		params = {
 			"y": y,
     			}
@@ -372,16 +188,18 @@ class VesselHandler(BaseHandler):
 
 
 PAGE_SIZE=20
+
 class ManifestHandler(BaseHandler):
     def get(self):
         
        cursor = None
        bookmark = self.request.get('bookmark')
-       search = self.request.get('search')
+       search = (self.request.get('search')).strip()
        if bookmark:
            cursor = ndb.Cursor.from_websafe_string(bookmark)
        if search:
-		query = models.Manifest.query(models.Manifest.voyage == search).order(-models.Manifest.created)
+#ndb.AND(Video.tags == tag, Video.key != video.key)
+		query = models.Manifest.query(ndb.OR(models.Manifest.voyage == search, models.Manifest.port == search, models.Manifest.vessel_name == search)).order(-models.Manifest._key)
        else:
        		query = models.Manifest.query().order(-models.Manifest.created)
        
@@ -391,15 +209,12 @@ class ManifestHandler(BaseHandler):
        if more:
             next_bookmark = next_cursor.to_websafe_string()
 
-
        is_prev = self.request.get('prev', False)
        if is_prev:
         query = q_reverse
         cursor = cursor.reversed()
        else:
         query = next_bookmark
-
-        #suggestions, next_cursor, more = query.fetch_page(PAGE_SIZE, start_cursor=cursor)
 
         if is_prev:
             prev_bookmark = cursor.reversed().to_websafe_string() if more else None
@@ -420,49 +235,81 @@ class ManifestHandler(BaseHandler):
 
 #++++manifest data+++++++++++++++++++++
 
-# add search index  
-def whichFile(wb):
+def addVesselData(wb, filename):
 	dictd = lambda: defaultdict(dictd)
-	y = dictd()
+	data = dictd()
 	for i, x in enumerate(wb.sheets()):
 		header_cells = x.row(0)
     		sh = wb.sheet_by_index(i)
     		num_rows = x.nrows - 1
+                num_cells = sh.ncols - 1
     		curr_row = 0
     		mid_row = 0
     		header = [each.value for each in header_cells]
-    		if 'MOL REEFER MANIFEST' in header:
-			y["header"] = "manifest"
-	    		while curr_row < num_rows:
-	        		curr_row += 1
+ 	       # delete_all_in_index(filename)
+    		while curr_row < num_rows:
+	       		curr_row += 1
+        		row = [int(each.value)
+               		if isinstance(each.value, float)
+               		else each.value
+               		for each in sh.row(curr_row)]
+               		value_dict = dict(zip(header, row))
+        		value_dict['title'] = x.name
+                        curr_cell = -1
+	                while curr_cell < num_cells:
+		            curr_cell += 1
+			# Cell Types: 0=Empty, 1=Text, 2=Number, 3=Date, 4=Boolean, 5=Error, 6=Blank
+		            cell_type = sh.cell_type(curr_row, curr_cell)
+                            cell_value = sh.cell_value(curr_row, curr_cell)
+                            if (cell_type==1):
+				search.Index(name=filename, namespace="text").put(CreateDocument(cell_value.strip() ,datetime.now(),0 ,sh.name, int(curr_row), int(curr_cell)))
+                            if (cell_type==3):
+				try:
+					a1_as_datetime = datetime(*xlrd.xldate_as_tuple(cell_value, 0)[0:6])
+					search.Index(name=filename, namespace="date").put(CreateDocument("", a1_as_datetime,0 ,sh.name,int(curr_row), int(curr_cell)))
+				except:
+					pass #if i cant read it i cant use it
+                            if (cell_type==2):
+				search.Index(name=filename, namespace="number").put(CreateDocument("",datetime.now(),int(cell_value),sh.name, int(curr_row), int(curr_cell)))
 
-	        		row = [int(each.value)
-	               		if isinstance(each.value, float)
-	               		else each.value
-	               		for each in sh.row(curr_row)]
+	return True
 
-	        		value_dict = dict(zip(header, row))
-	        		value_dict['title'] = x.name
-	        		if 'Vessel:' in row:
-	           			y["voyage"] = row[row.index('Voyage:')+1]
-	           			y["vessel"] = row[row.index('Vessel:')+1]
-	           			y["port"] = row[row.index('Port:')+1]
-	        		if 'BOOKING NO' in row:
-	           			y["labels"] = row
+def updateContainerStatus(indexname):
+	query1 = models.Manifest.query()
+	data = query1.fetch(query1.count())
+	for d in data:
+		query2 = models.ManifestDetail.query(models.ManifestDetail.manifest == d.key)
+		detail = query2.fetch(query2.count())
+		for e in detail:
+			a = index_search(e.container_number, indexname)
+			if (a):
+				e.container_status=True
+				e.put()
 
-		        	y["readings"][curr_row] = row
-				y["myfloat"][curr_row] = sh.cell_value(curr_row,5)
-				y["numrows"] = num_rows+1
-		else:
-			num_rows = sh.nrows - 1
-			num_cells = sh.ncols - 1
-			curr_row = -1
-			while curr_row < num_rows:
-				curr_row += 1
-				row = sh.row(curr_row)
+	return a
 
-	return y
+def index_search(query_string,indexname):
+	index = search.Index(name=indexname, namespace="text")
+	try:
+	    results = index.search(query_string)
+	    # Iterate over the documents in the results
+	    for scored_document in results:
+		return results, index.name
+	       # handle results
+	except search.Error:
+		logging.exception('Search failed')
 
+def matchManifest(indexfile):
+	query = models.Manifest.query()
+	data = query.fetch(query.count())
+	index = search.Index(name=indexfile, namespace="text")
+	for s in data:
+		query_string = "col < 4 AND text="+s.voyage
+        	results = index.search(query_string)
+	        for scored_document in results:
+			s.voyage_link=indexfile
+			s.put()
+	return s
 
 
 class SaveManifestHandler1(BaseHandler):
@@ -471,9 +318,19 @@ class SaveManifestHandler1(BaseHandler):
     		blob_info = blobstore.BlobInfo.get(resource)
 
 		wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(blob_info.key()).read())
-                v = addVesselData(wb, str(blob_info.key()))
-		y = makeManifestPickle(wb)
-		if (y["header"] == "manifest"):
+		sheet = wb.sheet_by_index(0)
+		data = [sheet.cell_value(0, col) for col in range(sheet.ncols)]
+		if not ("MOL REEFER MANIFEST" in data):
+			iname = str(blob_info.filename.replace(" ", ""))
+			delete_all_in_index(iname, "text")
+			delete_all_in_index(iname, "date")
+			delete_all_in_index(iname, "number")
+                	y = addVesselData(wb, iname)
+			s = matchManifest(iname)
+			updateContainerStatus(iname)
+			
+		else:
+			y = makeManifestPickle(wb)
 			if not (models.Manifest().find_duplicate(y["vessel"],y["voyage"],y["port"])):
 				man = models.Manifest()
 				man.blob = blob_info.key()
@@ -485,8 +342,6 @@ class SaveManifestHandler1(BaseHandler):
 					SaveManifestDetail(man.key, y, c, man.vessel_name, man.voyage, man.port)
 			else:
 				y="Manifest added already"
-                         
-
 
 		params = {
 	 			"y": y,
@@ -495,316 +350,7 @@ class SaveManifestHandler1(BaseHandler):
 
 
 
-class SaveManifestHandler(BaseHandler):
-	def get(self):
-		get_data = blobstore.BlobInfo.all()
-		fkey = get_data.fetch(get_data.count())
-		for dat in range(0, get_data.count()):
-			filekey = fkey[dat]
-                        
-			wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
-			v = addVesselData(wb, str(fkey[dat].filename).replace(" ", ""))
-			#if not (v == ""):
-			y = makeManifestPickle(wb)
-			if (y["header"] == "manifest"):
-				if not (models.Manifest().find_duplicate(y["vessel"],y["voyage"],y["port"])):
-					man = models.Manifest()
-					man.blob = filekey.key()
-					man.vessel_name = y["vessel"]
-					man.voyage = y["voyage"]
-					man.port = y["port"]
-					man.put()
-	 #    					search.Index(name='Manifest').put(CreateDocument(y["vessel"], y["voyage"], y["port"], man))
-				           # 	if y["vessel"]:
-	            		   #		search.Index(name='Manifest').put(CreateDocument(y["vessel"], y["voyage"], y["port"], str(man.key)))
-					for c in range(5, y["numrows"]):
-	    					SaveManifestDetail(man.key, y, c, man.vessel_name, man.voyage, man.port)
-			else:
-				y="y"
-                         
-
-
-		params = {
-	  		"y": y,
-    			}
-		return self.render_template("testman.html", **params)
-
 #end manifest
-
-class VesselListHandler(BaseHandler):
-  def get(self, filekey):
-	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
-#	s = wb.sheet_by_index(0)
-	y = makePickle(filekey)
-	if (y["manifest"] == 'MOL REEFER MANIFEST'):
-		filename = "manifestlist.html"
-	else:
-		filename = "vessellist.html"
-
-	params = {
-	    "y": y,
-
-    	}
-
-#	filename = "manifestlist.html"
-   	return self.render_template(filename, **params)
-
-
-
-class ReadingsListHandler(BaseHandler):
-  def get(self, filekey, sheet_name, row):
-	dictd = lambda: defaultdict(dictd)
-	y = dictd()
-	start_col =1
-	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
-	sh = wb.sheet_by_index(int(sheet_name))
- 	y["filekey"] = filekey
- 	y["sheet_name"] = sheet_name
- 	y["row"] = row
-#whats happening with this -1?
-        row = int(row)
-	cols = sh.ncols
-	y["filename"] = blobstore.BlobInfo.get(filekey).filename
-	y["product"] = sh.cell_value(10,1)
-#find col were readings start
-	for a in range(0, 10):
-		y["DAT"] = sh.cell_value(row, a)
-		try:
-			if "Dat/Sup" in y["DAT"]:
-				start_col = a+1
-		except:
-			pass
-
-#find col were readings end
-	for a in range(start_col, 40):
-		try:
-			y["DAT"] = sh.cell_value(row, a)
-#			if "Dat/Sup" in y["DAT"]:
-#				pass
-		except:
-			end_col = 21
-
-#find start date
-	for c in range(start_col, 20):
-		if "Dat/Sup" in y["DAT"]:
-			start_col = a+1
-
-	end_col = 22
-
-	y["start_col"] = start_col
-	y["end_col"] = end_col
-	y["container"] =  sh.cell_value(row,0)
-	for j in range(start_col, end_col):
-		y["count"][j] = j - start_col + 1
-		try:
-			y["DAtemp"][j] = sh.cell_value(row, j)
-			foo = sh.cell_value(row, j)
-			y["DAtempAM"][j], y["DAtempPM"][j] = foo.split("/")
-
-		except:
-			y["DAtemp"][j] = "NA"
-
-		try:
-	       		y["RAtemp"][j] = sh.cell_value(row+1, j)
-			foo = sh.cell_value(row+1, j)
-			y["RAtempAM"][j], y["RAtempPM"][j] = foo.split("/")
-		except:
-	       		y["RAtemp"][j] = "NA"
-		try:
-			y["date_"][j] = (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(28, j), 0))[0:6])).strftime('%d-%m-%Y')
-			y["day_"][j] = (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(28, j), 0))[0:6])).strftime('%d')
-			y["month_"][j] = (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(28, j), 0))[0:6])).strftime('%m')
-			y["year_"][j] = (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(28, j), 0))[0:6])).strftime('%Y')
-		except:
-		 	y["date_"][j] = "Date error"
-
-#diffences
-		try:
-			foo = sh.cell_value(row, j)
-			amDAtemp, pmDAtemp = foo.split("/")
-			foo2 = sh.cell_value(row+1, j)
-			amRAtemp, pmRAtemp = foo2.split("/")
-                      #  amt = amDAtemp - amRAtemp
-			AMdiff = Decimal(amDAtemp) - Decimal(amRAtemp)
-			PMdiff = Decimal(pmDAtemp) - Decimal(pmRAtemp)
-	       		y["AMDiff"][j] = AMdiff
-	       		y["PMDiff"][j] = PMdiff
-       			y["AMDiff"]["class"][j] = "default"
-       			y["PMDiff"]["class"][j] = "default"
-		        if (Decimal(AMdiff) <= Decimal(-1.0)):
-		       			y["AMDiff"]["class"][j] = "lightred"
-
-		        if (Decimal(AMdiff) >= Decimal(-0.5)):
-		       			y["AMDiff"]["class"][j] = "lightgreen"
-
-		        if (Decimal(AMdiff) >= Decimal(-0.2)):
-		       			y["AMDiff"]["class"][j] = "darkgreen"
-
-		        if (Decimal(AMdiff) <= Decimal(-2.0)):
-		       			y["AMDiff"]["class"][j] = "darkred"
-
-
-#			PMdiff
-
-		        if (Decimal(PMdiff) <= Decimal(-1.0)):
-		       			y["PMDiff"]["class"][j] = "lightred"
-
-		        if (Decimal(PMdiff) >= Decimal(-0.5)):
-		       			y["PMDiff"]["class"][j] = "lightgreen"
-
-		        if (Decimal(PMdiff) >= Decimal(-0.2)):
-		       			y["PMDiff"]["class"][j] = "darkgreen"
-
-		        if (Decimal(PMdiff) <= Decimal(-2.0)):
-		       			y["PMDiff"]["class"][j] = "darkred"
-
-		except:
-	       		y["AMDiff"][j] = "NA"
-
-
-
-    	params = {
-	    "y": y,
-
-    	}
-   	return self.render_template('readingslist.html', **params)
-
-class ContainerListHandler(BaseHandler):
-  def get(self, filekey, sheet_name):
-	dictd = lambda: defaultdict(dictd)
-	y = dictd()
-	wb = xlrd.open_workbook(file_contents=blobstore.BlobReader(filekey).read())
-	sh = wb.sheet_by_index(int(sheet_name))
-	row = 33
-#find col were readings start
-	for a in range(0, 10):
-		y["DAT"] = sh.cell_value(row, a)
-		try:
-			if "Dat/Sup" in y["DAT"]:
-				start_col = a+1
-		except:
-			pass
-	y["start_col"] = start_col
-
-	for a in range(25, 32):
-		if "Number" in sh.cell_value(a,0):
-			y["start"] = a + 3
-  	for c in range(y["start"], sh.nrows , 2):
-            y["container"][c] =  sh.cell_value(c,0)
-	    y["container"]["ppecbcode"][c] = sh.cell_value(c,1)
-    	    y["container"]["vent"][c] =  sh.cell_value(c,2)
-	    y["container"]["setpoint"][c] = sh.cell_value(c,3)
-            y["rows"] =  sh.nrows
-            y["filekey"] =  filekey
-            y["sheet_name"] =  sheet_name
-       	    for g in range(5, 10):
-		try:
-	            foo = sh.cell_value(c, g)
-		    amDAtemp, pmDAtemp = foo.split("/")
-		    foo2 = sh.cell_value(c+1, g)
-		    amRAtemp, pmRAtemp = foo2.split("/")
-   		    AMdiff = Decimal(amDAtemp) - Decimal(amRAtemp)
-		    PMdiff = Decimal(pmDAtemp) - Decimal(pmRAtemp)
-	       	    y["AMDiff"][g] = AMdiff
-	       	    y["PMDiff"][g] = PMdiff
-       		    y["AMDiff"]["class"][g] = "default"
-       		    y["PMDiff"]["class"][g] = "default"
- 	            if (Decimal(AMdiff) >= Decimal(-0.2)):
-		    	y["AMDiff"]["class"][c][g] = "darkgreen"
-#			y["colour"][c] = "darkgreen"
-	            if (Decimal(AMdiff) >= Decimal(-0.5)):
-		    	y["AMDiff"]["class"][c][g] = "lightgreen"
-#			y["colour"][c] = "lightgreen"
-		    if (Decimal(AMdiff) <= Decimal(-1.0)):
-		    	y["AMDiff"]["class"][c][g] = "lightred"
-			y["colour"][c] = "lightred"
-  	            if (Decimal(AMdiff) <= Decimal(-2.0)):
-		    	y["AMDiff"]["class"][c][g] = "darkred"
-			y["colour"][c] = "darkred"
-		except:
-			pass
-
-
-    	params = {
-	    "y": y,
-
-    	}
-   	return self.render_template('containerlist.html', **params)
-
-class getBlobInfo():
-	pass
-
-class FileListHandler(BaseHandler):
-  def get(self):
-	get_data = blobstore.BlobInfo.all()
-	dictd = lambda: defaultdict(dictd)
-	list_data = dictd()
-#	f = 0
-	for f in range(0, get_data.count()):
-	    list_data["filename"][f] = get_data[f].filename
-	    list_data["key"][f] = get_data[f].key()
-	    list_data["count"] = get_data.count()
-
-    	params = {
-	    "list_data": list_data,
-
-    	}
-   	return self.render_template('filelist.html', **params)
-
-
-class ResultsHandler(BaseHandler):
-  def get(self):
-#TODO set requests
-      #  from_container = 0
-
-        to_container = 3
-	from_container = self.request.get('from_container')
-
-    		#query = Suggestion.query().order(-Suggestion.when)
-    	if from_container:
-		from_container = self.request.get('from_container')
-	else:
-        	from_container = 0
-#TODO select key from request get
-	blob_key="-3cfYPZI8Rx1VLEkofj-DQ=="
-	blob_reader = blobstore.BlobReader(blob_key)
-
-	wb = xlrd.open_workbook(file_contents=blob_reader.read())
-	#sh = wb.sheet_by_index(0)
-#TODO add cape town durban etc
-        sh = wb.sheet_by_name("FDEC")
-
-        con_range = range(C_START, C_START+(to_container*2),2)
-
-	dictd = lambda: defaultdict(dictd)
-	y = dictd()
-        for i in range(from_container,to_container):
-		y["voyage"] =  sh.cell_value(9,1)
-                y["date_of_loading"] =  (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(11,1), 0))[0:6])).strftime('%d-%m-%Y')
-                y["product"] =  sh.cell_value(10,1)
-                y["port"] = sh.cell_value(11,0)
-                y["vesselname"] = sh.cell_value(8,1)
-    		y["container"][i] =  sh.cell_value(con_range[i],0)
-		y["container"]["ppecbcode"][i] = sh.cell_value(con_range[i],1)
-    		y["container"]["vent"][i] =  sh.cell_value(con_range[i],2)
-		y["container"]["setpoint"][i] = sh.cell_value(con_range[i],3)
-		for j in range(0,4):
-			y["container"]["DAtemp"][i][j] = sh.cell_value(con_range[i],5+j)
-			y["container"]["RAtemp"][i][j] = sh.cell_value(con_range[i]+1,5+j)
-          		y["container"]["date_"][i][j] = (datetime(*(xlrd.xldate_as_tuple(sh.cell_value(29, 5 + j), 0))[0:6])).strftime('%d-%m-%Y')
-			y["container"]["day"][i][j] = str(j+1)+" Day "
-
-
-    	params = {
-	    "y": y,
-	    "from_container": from_container,
-	    "to_container": to_container,
-
-    	}
-
-
-   	return self.render_template('shiplist.html', **params)
-
 #++++++++++++++++++++++++++blobstore handlers++++++++++++++++++++++++++
 class ViewFileHandler(blobstore_handlers.BlobstoreDownloadHandler):
   def get(self, resource):
@@ -819,7 +365,6 @@ class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
 
 
 
-
 #+++++++system handlers++++++++++++++++++++++++
 
 class UploadHandler1(blobstore_handlers.BlobstoreUploadHandler):
@@ -827,16 +372,13 @@ class UploadHandler1(blobstore_handlers.BlobstoreUploadHandler):
     #resource = str(urllib.unquote(resource))
     upload_files = self.get_uploads('file')
     blob_info = upload_files[0]
-    blobfilendb = models.UserUpload_ndb(blob=blob_info.key())
-    blobfilendb.put()
-   
-#    upload_files = self.get_uploads('file')  # 'file' is file upload field in the form
-#    blob_info = upload_files[0]
-#    self.redirect('/serve/%s' % blob_info.key())
+#    blobfilendb = models.UserUpload_ndb(blob=blob_info.key())
+#    blobfilendb.put()
+ 
 
     self.redirect('/save_manifest1/%s' % blob_info.key())
 
-
+"""
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
   def post(self):
     #resource = str(urllib.unquote(resource))
@@ -847,7 +389,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 
     self.redirect('/save_manifest/')
 #    self.redirect('/secure')
-
+"""
 
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
   def get(self, resource):
@@ -864,7 +406,6 @@ class ContactHandler(BaseHandler):
     """
     Handler for Contact Form
     """
-
     def get(self):
         """ Returns a simple HTML for contact form """
         if self.user:
